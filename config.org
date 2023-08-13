@@ -2914,6 +2914,32 @@ add package src directories to projectile. This isn't desirable in my opinion.
   (or (mapcar (lambda (p) (s-starts-with-p p filepath)) projectile-ignored-projects)))
 #+end_src
 
+**** void-packages
+I'm using [[https:voidlinux.org][Void Linux]], a Linux distribution with a minimal init system and a very
+interesting package manager.
+The base of the package manager, the packages, are defined [[github:void-linux/void-packages][in a git repo]]. So
+called ~srcpkgs~ are built using a ~template~ file. It even allows for ~patches~
+to be applied on the ~sourcecode~.
+
+Anyways, the ~template~ files are basically ~sh~-files with special functions to
+be implemented/overwritten. So I'd like to recognize them and activate
+~sh~-mode.
+
+My idea is to hook the ~projectile-after-switch-project-hook~ to check if the
+~projectile-project-name~ equals ~"void-packages"~ and add ~sh-mode~ for
+~"template"~ files. But the hook triggers just /after/ the first selected buffer
+is open. If that first buffer is a template file, the ~sh-mode~ isn't activated.
+Simple fix: revert the buffer opened to retrigger emacs choosing the major mode.
+
+#+begin_src emacs-lisp
+(defun conditional-sh-mode-on-template-files ()
+  "activate sh-mode for template files"
+  (when (string-equal (projectile-project-name) "void-packages")
+    (add-to-list 'auto-mode-alist '("template" . sh-mode))
+    (let ((inhibit-message t)) (revert-buffer-quick))))
+(add-hook 'projectile-after-switch-project-hook #'conditional-sh-mode-on-template-files)
+#+end_src
+
 *** Ispell
 **** Downloading dictionaries
 
