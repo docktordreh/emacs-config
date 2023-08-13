@@ -1,32 +1,36 @@
-#+title: Doom Emacs Configuration --- [[https://tecosaur.github.io/emacs-config/config.html][HTML Version]], [[https://tecosaur.github.io/emacs-config/config.pdf][PDF]]
-#+author: tecosaur
+#+title: Doom Emacs Configuration
+#+author: valentin lechner
 
-#+html: <a href="https://www.gnu.org/software/emacs/emacs.html#Releases"><img src="https://img.shields.io/badge/Emacs-28.1-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white"></a>
+#+html: <a href="https://www.gnu.org/software/emacs/emacs.html#Releases"><img src="https://img.shields.io/badge/Emacs-29.1-blueviolet.svg?style=for-the-badge&logo=GNU%20Emacs&logoColor=white"></a>
 #+html: <a href="https://orgmode.org"><img src="https://img.shields.io/badge/Org-literate%20config-%2377aa99?style=flat-square&logo=org&logoColor=white"></a>
-#+html: <a href="https://github.com/tecosaur/emacs-config/actions"><img src="https://img.shields.io/github/actions/workflow/status/tecosaur/emacs-config/publish.yml?style=flat-square&label=publish&logo=buffer"></a>
-#+html: <a href="https://raw.githubusercontent.com/tecosaur/emacs-config/gh-pages/misc/upgradable-packages.txt"><img src="https://raw.githubusercontent.com/tecosaur/emacs-config/gh-pages/misc/pkg-status.svg"></a>
+
+
+* Disclaimer
+
+This configuration is inspired (and a lot of it directly copied, although
+development of it will change that over time) by the wonderful work of [[github:tecosaur/emacs-config][tecosaur]].
+Make sure to check out the original.
 #+html: <a href="https://liberapay.com/tec"><img src="https://shields.io/badge/support%20my%20efforts-f6c915?logo=Liberapay&style=flat-square&logoColor=black"></a>
 
+* About
+
 Here you may find my config. There is only one significant file:
-+ =config.org=, my configuration file --- see the [[https://tecosaur.github.io/emacs-config/config.html][HTML]] or [[https://tecosaur.github.io/emacs-config/config.pdf][PDF]] export.
++ =config.org=
 
 [[file:misc/screenshots/splash-screen.png]]
 
 =config.org= /generates/ the [[https://tecosaur.github.io/emacs-config/engraved/init.el.html][init.el]], [[https://tecosaur.github.io/emacs-config/engraved/config.el.html][config.el]], and [[https://tecosaur.github.io/emacs-config/engraved/packages.el.html][packages.el]] files, as well as
 about a dozen others.
 
-Other than that, resources are put in [[file:misc/][misc]], and you may find submodules for
-packages of mine in [[file:lisp/][lisp]].
+Other than that, resources like logos are put in [[file:misc/][misc]].
 
 * Installation
-
-This is mostly a personal note, see the [[https://tecosaur.github.io/emacs-config/config.html#notes-unwary-adventurer][warning]] in my config.
 
 In order to have Doom load the config, we need to initialise the submodules, and
 generate the =init.el= once.
 
 #+begin_src shell :eval query
-git clone --recurse-submodules git@github.com:tecosaur/emacs-config.git ~/.config/doom
+git clone git@github.com:docktordreh/emacs-config.git ~/.config/doom
 echo "(doom! :config literate)" > ~/.config/doom/init.el
 git clone --depth 1 https://github.com/hlissner/doom-emacs ~/.emacs.d
 ~/.emacs.d/bin/doom install; ~/.config/doom/setup.sh
