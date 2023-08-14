@@ -1981,8 +1981,8 @@ Emacs-style /E/. I was using the blackhole image, but when I stripped down the
 splash screen to something more minimal I switched to just using the /E/.
 
 #+attr_latex: :width 0.2\linewidth
-#+attr_html: :style width:20% :alt Fancy Emacs "E"
-[[file:misc/splash-images/emacs-e-template.svg]]
+#+attr_html: :style width:20% :alt Aperture Science - we do what we must because we can
+[[file:misc/splash-images/aperture-laboratories-template.svg]]
 
 #+begin_src emacs-lisp
 (defvar fancy-splash-image-directory
@@ -1990,7 +1990,7 @@ splash screen to something more minimal I switched to just using the /E/.
   "Directory in which to look for splash image templates.")
 
 (defvar fancy-splash-image-template
-  (expand-file-name "emacs-e-template.svg" fancy-splash-image-directory)
+  (expand-file-name "aperture-laboratories-template.svg" fancy-splash-image-directory)
   "Default template svg used for the splash image.
 Colours are substituted as per `fancy-splash-template-colours'.")
 #+end_src
