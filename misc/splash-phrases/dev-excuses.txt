@@ -112,6 +112,7 @@ There’s currently a problem with our hosting company.
 This code was not supposed to go in to production yet.
 This is a previously known bug you told me not to work on yet.
 We didn’t have enough time to peer review the final changes.
+We do what we must because we can.
 Well done, you found my easter egg!
 Well, at least it displays a very pretty error.
 Well, at least we know not to try that again.
