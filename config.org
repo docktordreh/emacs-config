@@ -1452,7 +1452,7 @@ sh                           ; she sells {ba,z,fi}sh shells on the C xor
 ;;solidity                   ; do you need a blockchain? No.
 ;;swift                      ; who asked for emoji variables?
 ;;terra                      ; Earth and Moon in alignment for performance.
-web                          ; the tubes
+(web +lsp)                   ; the tubes
 yaml                         ; JSON, but readable
 ;;zig                        ; C, but simpler
 #+end_src
@@ -2908,7 +2908,7 @@ add package src directories to projectile. This isn't desirable in my opinion.
 
 #+begin_src emacs-lisp
 (setq projectile-ignored-projects
-      (list "~/" "/tmp" (expand-file-name "straight/repos" doom-local-dir)))
+      (list "~/" "/tmp" (expand-file-name "straight/repos" doom-local-dir) "~/Projects/valentin"))
 (defun projectile-ignored-project-function (filepath)
   "Return t if FILEPATH is within any of `projectile-ignored-projects'"
   (or (mapcar (lambda (p) (s-starts-with-p p filepath)) projectile-ignored-projects)))
@@ -3451,6 +3451,19 @@ Now, we just identify the files in question.
         "*/_region_.tex"))
 #+end_src
 
+** Languages
+*** Vue
+;;
+;; #+call: confpkg("!Pkg vue")
+;;
+;; #+begin_src emacs-lisp :tangle packages.el
+;; (package! vue-mode)
+;; (package! nvm)
+;; #+end_src
+;;
+;; #+begin_src emacs-lisp
+;; (add-hook 'vue-mode-hook #'lsp!)
+;; #+end_src
 ** Frivolities
 *** xkcd
 
