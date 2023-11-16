@@ -5115,26 +5115,14 @@ can tweak ~+org-babel-mode-alist~ when exporting.
 
 **** Compiling
 
-By default Org uses ~pdflatex~ \times 3 + ~bibtex~. This simply won't do in our
-modern world. ~latexmk~ + ~biber~ (which is used automatically with ~latexmk~) is a
-simply superior combination.
 
 #+begin_src emacs-lisp
 ;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
-(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
+(setq org-latex-pdf-process
+      '("LC_ALL=en_US.UTF-8 lualatex -shell-escape -interaction nonstopmode %f"
+        "LC_ALL=en_US.UTF-8 lualatex -shell-escape -interaction nonstopmode %f"))
 #+end_src
 
-While ~org-latex-pdf-process~ does support a function, and we could use that
-instead, this would no longer use the log buffer --- it's a bit blind, you give
-it the file name and expect it to do its thing.
-
-The default values of ~org-latex-compilers~ is given in commented form to see how
-~org-latex-pdf-process~ works with them.
-
-While the ~-%latex~ above is slightly hacky (~-pdflatex~ expects to be given a
-value) it allows us to leave ~org-latex-compilers~ unmodified.
-This is nice in case I open an org file that uses =#+LATEX_COMPILER= for example,
-it should still work.
 
 **** Nicer checkboxes
 
@@ -6402,6 +6390,24 @@ priority of =mypyls=
 #+begin_src emacs-lisp
 (after! lsp-python-ms
   (set-lsp-priority! 'mspyls 1))
+#+end_src
+
+
+** Matlab
+
+#+call: confpkg("!Pkg matlab-mode")
+Matlab is a programming platform designed specifically for engineers and
+scientists. I need it for university.
+#+begin_src emacs-lisp :tangle packages.el
+(package! matlab-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.m$" . matlab-mode))
+(setenv "LD_PRELOAD" (concat "/lib/libstdc++.so.6:" (getenv "LD_PRELOAD")))
+(setq matlab-shell-command "/home/valentin/matlab/bin/matlab")
+(setq matlab-shell-command-switches (list "-nodesktop"))
+(add-hook! 'matlab-mode #'mlint-minor-mode)
 #+end_src
 
 ** Graphviz
