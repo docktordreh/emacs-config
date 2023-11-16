@@ -1116,11 +1116,6 @@ In Germany, our week starts on monday
 (setq calendar-week-start-day 1)
 #+end_src
 
-Relative line numbers make it easy to use vim commands like ~12k~ to go up 12 lines.
-#+begin_src emacs-lisp
-(setq display-line-numbers-type 'relative)
-#+end_src
-
 My files should always use =utf-8= encoding.
 Additionally, in the subsection [[File encoding]], there is a nice configuration
 which only displays the current file encoding in the modeline, if it is not ~utf-8~.
@@ -1741,6 +1736,8 @@ The =doom-serif-font= is from the same repository.
                        :family "BlexMono Nerd Font Mono"
                        :size 22
                        :weight 'light)
+      doom-symbol-font (font-spec
+                         :family "Symbola")
       doom-unicode-font (font-spec
                          :family "JuliaMono"))
 #+end_src
