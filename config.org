@@ -1148,9 +1148,66 @@ Improve undo and save
 #+begin_src emacs-lisp
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
       evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
-      auto-save-default t)                        ; Nobody likes to loose work, I certainly don't
+      auto-save-default t                         ; Nobody likes to loose work, I certainly don't
+      truncate-string-ellipsis "…"                ; Unicode ellispis are nicer than "...", and also save /precious/ space
+      password-cache-expiry nil                   ; I can trust my computers ... can't I?
+      ;; scroll-preserve-screen-position 'always     ; Don't have `point' jump around
+      scroll-margin 2                             ; It's nice to maintain a little margin
+      display-time-default-load-average nil)      ; I don't think I've ever found this useful
+
+(display-time-mode 1)                             ; Enable time in the mode-line
+(global-subword-mode 1)                           ; Iterate through CamelCase words
 #+end_src
 
+When using a device with a battery, it would be nice to display battery
+ information. We can check for a battery during tangle via noweb, and only call
+ ~display-battery-mode~ when relevant. From a look at the various status functions
+ in =battery.el=, it seems like the ~?L~ key is consistently =N/A= when there is no
+ battery, so we'll test on that.
+
+#+name: battery-status-setup
+#+begin_src emacs-lisp :noweb-ref none
+(require 'battery)
+(if (and battery-status-function
+         (not (equal (alist-get ?L (funcall battery-status-function))
+                     "N/A")))
+    (prin1-to-string `(display-battery-mode 1))
+  "")
+#+end_src
+
+Now with noweb we' use the result.
+
+#+begin_src emacs-lisp :noweb no-export 
+<<battery-status-setup()>>
+#+end_src
+
+*** Frame sizing
+
+It's nice to control the size of new frames, when launching Emacs that can be
+done with src_shell{emacs -geometry 160x48}. After the font size adjustment
+during initialisation this works out to be ~102x31~.
+
+Thanks to hotkeys, it's easy for me to expand a frame to half/full-screen, so it
+makes sense to be conservative with the sizing of new frames.
+
+Then, for creating new frames within the same Emacs instance, we'll just set the
+default to be something roughly 80% of that size.
+
+#+begin_src emacs-lisp
+(add-to-list 'default-frame-alist '(height . 24))
+(add-to-list 'default-frame-alist '(width . 80))
+#+end_src
+
+*** Auto-customisations
+
+By default changes made via a customisation interface are added to =init.el=.
+I prefer the idea of using a separate file for this. We just need to change a
+setting, and load it if it exists.
+#+begin_src emacs-lisp
+(setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
+(when (file-exists-p custom-file)
+  (load custom-file))
+#+end_src
 
 *** Windows
 
@@ -1269,7 +1326,7 @@ literate
 doom                         ; what makes DOOM look the way it does
 doom-dashboard               ; a nifty splash screen for Emacs
 doom-quit                    ; DOOM quit-message prompts when you quit Emacs
-(emoji +unicode)             ; 🙂
+;; (emoji +unicode)          ; 🙂
 ;;fill-column                ; a `fill-column' indicator
 hl-todo                      ; highlight TODO/FIXME/NOTE/DEPRECATED/HACK/REVIEW
 ;;hydra                      ; quick documentation for related commands
@@ -1485,244 +1542,11 @@ irc                          ; how neckbeards socialize
 #+end_src
 
 *** Visual Settings
-**** Fontset
+**** Theme
 
-Doom exposes five (optional) variables for controlling fonts in Doom.
-Here are the three important ones:
-
-+ =doom-font=
-+ =doom-variable-pitch-font=
-+ =doom-big-font= -- used for =doom-big-font-mode=; use this for
-  presentations or streaming.
-
-They all accept either a font-spec, font string ("Input Mono-12"), or
-xlfd font string.
-
-For ligature-Support I use the Iosevka Font.
-The main (=doom-font=) is a patched [[https://github.com/jsravn/iosevka-emacs][Iosevka Font]] (monospace).
-
-Ligature Showcase:
-#+begin_example
-  <->
-  <-->
-  <--->
-  <---->
-  <----->
-  ;; Double-ended equals arrows
-  <=>
-  <==>
-  <===>
-  <====>
-  <=====>
-  ;; Double-ended asterisk operators
-  <**>
-  <***>
-  <****>
-  <*****>
-  ;; HTML comments
-  <!--
-  <!---
-  ;; Three-char ops with discards
-  <$
-  <$>
-  $>
-  <.
-  <.>
-  .>
-  <*
-  <*>
-  *>
-  <\\
-  <\\>
-  \\>
-  </
-  </>
-  />
-  <\"
-  <\">
-  \">
-  <'
-  <'>
-  '>
-  <^
-  <^>
-  ^>
-  <&
-  <&>
-  &>
-  <%
-  <%>
-  %>
-  <@
-  <@>
-  @>
-  <#
-  <#>
-  #>
-  <+
-  <+>
-  +>
-  <-
-  <->
-  ->
-  <!
-  <!>
-  !>
-  <?
-  <?>
-  ?>
-  <|
-  <|>
-  |>
-  <:
-  <:>
-  :>
-  ;; Colons
-  ::
-  :::
-  ::::
-  ;; Arrow-like operators
-  ->
-  ->-
-  ->--
-  ->>
-  ->>-
-  ->>--
-  ->>>
-  ->>>-
-  ->>>--
-  -->
-  -->-
-  -->--
-  -->>
-  -->>-
-  -->>--
-  -->>>
-  -->>>-
-  -->>>--
-  >-
-  >--
-  >>-
-  >>--
-  >>>-
-  >>>--
-  =>
-  =>=
-  =>==
-  =>>
-  =>>=
-  =>>==
-  =>>>
-  =>>>=
-  =>>>==
-  ==>
-  ==>=
-  ==>==
-  ==>>
-  ==>>=
-  ==>>==
-  ==>>>
-  ==>>>=
-  ==>>>==
-  >=
-  >==
-  >>=
-  >>==
-  >>>=
-  >>>==
-  <-
-  -<-
-  --<-
-  <<-
-  -<<-
-  --<<-
-  <<<-
-  -<<<-
-  --<<<-
-  <--
-  -<--
-  --<--
-  <<--
-  -<<--
-  --<<--
-  <<<--
-  -<<<--
-  --<<<--
-  -<
-  --<
-  -<<
-  --<<
-  -<<<
-  --<<<
-  <=
-  =<=
-  ==<=
-  <<=
-  =<<=
-  ==<<=
-  <<<=
-  =<<<=
-  ==<<<=
-  <==
-  =<==
-  ==<==
-  <<==
-  =<<==
-  ==<<==
-  <<<==
-  =<<<==
-  ==<<<==
-  =<
-  ==<
-  =<<
-  ==<<
-  =<<<
-  ==<<<
-  ;; Monadic operators
-  >=>
-  >->
-  >-->
-  >==>
-  <=<
-  <-<
-  <--<
-  <==<
-  ;; Composition operators
-  >>
-  >>>
-  <<
-  <<<
-  ;; Lens operators
-  :+
-  :-
-  :=
-  +:
-  -:
-  =:
-  =^
-  =+
-  =-
-  =*
-  =/
-  =%
-  ^=
-  +=
-  -=
-  *=
-  /=
-  %=
-  ;; Logical
-  /\\
-  \\/
-  <>
-  <+
-  <+>
-  +>
-#+END_example
-
-
-The =doom-serif-font= is from the same repository.
+I like ~doom-1337~.
 #+begin_src emacs-lisp
+(setq doom-theme 'doom-1337)
 (setq doom-font (font-spec
                     :family "Iosevka Nerd Font Mono"
                     :size 24)
@@ -1742,11 +1566,91 @@ The =doom-serif-font= is from the same repository.
                          :family "JuliaMono"))
 #+end_src
 
-**** Theme
+#+attr_html: :class invertible :alt Screenshot of the fonts within Emacs.
+[[https://tecosaur.com/lfs/emacs-config/screenshots/font-face.png]]
 
-I like ~doom-1337~.
+In addition to these fonts, Merriweather is used with =nov.el=, and Alegreya as a
+serifed proportional font used by =mixed-pitch-mode= for =writeroom-mode= with Org
+files.
+
+***** Emojis
+
+Lastly, it would be good to sort out emojis. All that's really needed here is to
+apply =doom-emoji-font=, which needs to be done here because it's not /actually/ a
+Doom font variable, but rather my own addition.
+
 #+begin_src emacs-lisp
-(setq doom-theme 'doom-1337)
+(add-hook! 'after-setting-font-hook
+  (defun +emoji-set-font ()
+    (set-fontset-font t 'emoji doom-emoji-font nil 'prepend)))
+
+#+end_src
+
+We might as well also construct a regexp to make identifying emojis if buffers
+more convenient.
+
+#+begin_src emacs-lisp
+(defvar +emoji-rx
+  (let (emojis)
+    (map-char-table
+     (lambda (char set)
+       (when (eq set 'emoji)
+         (push (copy-tree char) emojis)))
+     char-script-table)
+    (rx-to-string `(any ,@emojis)))
+  "A regexp to find all emoji-script characters.")
+#+end_src
+
+For the sake of convenient insertion, we'll also register some emoji aliases
+based on common usage.
+
+#+begin_src emacs-lisp
+(setq emoji-alternate-names
+      '(("🙂" ":)")
+        ("😄" ":D")
+        ("😉" ";)")
+        ("🙁" ":(")
+        ("😆" "laughing face" "xD")
+        ("🤣" "ROFL face")
+        ("😢" ":'(")
+        ("🥲" ":')")
+        ("😮" ":o")
+        ("😑" ":|")
+        ("😎" "cool face")
+        ("🤪" "goofy face")
+        ("🤥" "pinnochio face" "liar face")
+        ("😠" ">:(")
+        ("😡" "angry+ face")
+        ("🤬" "swearing face")
+        ("🤢" "sick face")
+        ("😈" "smiling imp")
+        ("👿" "frowning imp")
+        ("❤️" "<3")
+        ("🫡" "o7")
+        ("👍" "+1")
+        ("👎" "-1")
+        ("👈" "left")
+        ("👉" "right")
+        ("👆" "up")
+        ("💯" "100")
+        ("💸" "flying money")))
+#+end_src
+
+Lastly, when using Emacs 28+ it would be nice to open the nice emoji dispatch
+with the leader key as well as =C-x 8 e=. Since =SPC e= is unclaimed, let's just use
+that until we have a better use for it (we could also split up the insertion and
+querying commands in other parts of the map).
+
+#+begin_src emacs-lisp
+(when (>= emacs-major-version 29)
+  (map! :leader
+        (:prefix ("e" . "Emoji")
+         :desc "Search" "s" #'emoji-search
+         :desc "Recent" "r" #'emoji-recent
+         :desc "List" "l" #'emoji-list
+         :desc "Describe" "d" #'emoji-describe
+         :desc "Insert" "i" #'emoji-insert
+         :desc "Insert" "e" #'emoji-insert)))
 #+end_src
 
 **** Line numbers
@@ -3152,6 +3056,137 @@ Only display fileencoding in modeline whenever we don't have ~utf-8~ files.
 (add-hook 'after-change-major-mode-hook #'doom-modeline-conditional-buffer-encoding)
 #+end_src
 
+**** PDF modeline
+
+I think the PDF modeline could do with tweaking. I raised [[https://github.com/seagle0128/doom-modeline/pull/425][an issue]] on this,
+however the response was basically "put your preferences in your personal
+config, the current default is sensible" --- so here we are.
+
+First up I'm going to want a segment for just the buffer file name, and a PDF
+icon. Then we'll redefine two functions used to generate the modeline.
+
+#+begin_src emacs-lisp
+(doom-modeline-def-segment buffer-name
+  "Display the current buffer's name, without any other information."
+  (concat
+   doom-modeline-spc
+   (doom-modeline--buffer-name)))
+
+(doom-modeline-def-segment pdf-icon
+  "PDF icon from nerd-icons."
+  (concat
+   doom-modeline-spc
+   (doom-modeline-icon sucicon "nf-seti-pdf" nil nil
+                       :face (if (doom-modeline--active)
+                                 'nerd-icons-red
+                               'mode-line-inactive)
+                       :v-adjust 0.02)))
+
+(defun doom-modeline-update-pdf-pages ()
+  "Update PDF pages."
+  (setq doom-modeline--pdf-pages
+        (let ((current-page-str (number-to-string (eval `(pdf-view-current-page))))
+              (total-page-str (number-to-string (pdf-cache-number-of-pages))))
+          (concat
+           (propertize
+            (concat (make-string (- (length total-page-str) (length current-page-str)) ? )
+                    " P" current-page-str)
+            'face 'mode-line)
+           (propertize (concat "/" total-page-str) 'face 'doom-modeline-buffer-minor-mode)))))
+
+(doom-modeline-def-segment pdf-pages
+  "Display PDF pages."
+  (if (doom-modeline--active) doom-modeline--pdf-pages
+    (propertize doom-modeline--pdf-pages 'face 'mode-line-inactive)))
+
+(doom-modeline-def-modeline 'pdf
+  '(bar window-number pdf-pages pdf-icon buffer-name)
+  '(misc-info matches major-mode process vcs))
+#+end_src
+
+*** Keycast
+
+#+call: confpkg("!Pkg Keycast")
+
+For some reason, I find myself demoing Emacs every now and then. Showing what
+keyboard stuff I'm doing on-screen seems helpful. While [[https://gitlab.com/screenkey/screenkey][screenkey]] does exist,
+having something that doesn't cover up screen content is nice.
+
+#+attr_html: :class invertible :alt Screenshot of Keycast-mode in action
+[[https://tecosaur.com/lfs/emacs-config/screenshots/keycast.png]]
+
+#+begin_src emacs-lisp :tangle packages.el
+(package! keycast :pin "72d9add8ba16e0cae8cfcff7fc050fa75e493b4e")
+#+end_src
+
+Let's just make sure this is lazy-loaded appropriately.
+#+begin_src emacs-lisp
+(use-package! keycast
+  :commands keycast-mode
+  :config
+  (define-minor-mode keycast-mode
+    "Show current command and its key binding in the mode line."
+    :global t
+    (if keycast-mode
+        (progn
+          (add-hook 'pre-command-hook 'keycast--update t)
+          (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
+      (remove-hook 'pre-command-hook 'keycast--update)
+      (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
+  (custom-set-faces!
+    '(keycast-command :inherit doom-modeline-debug
+                      :height 0.9)
+    '(keycast-key :inherit custom-modified
+                  :height 1.1
+                  :weight bold)))
+#+end_src
+
+*** Screencast
+
+#+call: confpkg("!Pkg Screencast")
+
+In a similar manner to [[Keycast]], [[https://gitlab.com/ambrevar/emacs-gif-screencast][gif-screencast]] may come in handy.
+#+begin_src emacs-lisp :tangle packages.el
+(package! gif-screencast :pin "adec408e6adab2e8e057fe0ad828749f473bfb83")
+#+end_src
+
+We can lazy load this using the start/stop commands.
+
+I initially installed ~scrot~ for this, since it was the default capture program.
+However it raised ~glib error: Saving to file ... failed~ each time it was run.
+Google didn't reveal any easy fixed, so I switched to [[https://github.com/naelstrof/maim][maim]]. We now need to pass
+it the window ID. This doesn't change throughout the lifetime of an emacs
+instance, so as long as a single window is used ~xdotool getactivewindow~ will
+give a satisfactory result.
+
+It seems that when new colours appear, that tends to make ~gifsicle~ introduce
+artefacts. To avoid this we pre-populate the colour map using the current doom
+theme.
+#+begin_src emacs-lisp
+(use-package! gif-screencast
+  :commands gif-screencast-mode
+  :config
+  (map! :map gif-screencast-mode-map
+        :g "<f8>" #'gif-screencast-toggle-pause
+        :g "<f9>" #'gif-screencast-stop)
+  (setq gif-screencast-program "maim"
+        gif-screencast-args `("--quality" "3" "-i" ,(string-trim-right
+                                                     (shell-command-to-string
+                                                      "xdotool getactivewindow")))
+        gif-screencast-optimize-args '("--batch" "--optimize=3" "--usecolormap=/tmp/doom-color-theme"))
+  (defun gif-screencast-write-colormap ()
+    (f-write-text
+     (replace-regexp-in-string
+      "\n+" "\n"
+      (mapconcat (lambda (c) (if (listp (cdr c))
+                                 (cadr c))) doom-themes--colors "\n"))
+     'utf-8
+     "/tmp/doom-color-theme" ))
+  (gif-screencast-write-colormap)
+  (add-hook 'doom-load-theme-hook #'gif-screencast-write-colormap))
+#+end_src
+
+>>>>>>> 24dcb8f022a060ccb065e98a5ce20200d85dbd4b
 *** Mixed pitch
 
 
@@ -3297,6 +3332,48 @@ shadow)=, but I don't like that.
       (propertize (file-size-human-readable size) 'face (list :foreground color)))))
 #+end_src
 
+*** Nerd Icons
+
+#+call: confpkg("!Pkg Nerd Icons")
+
+#+begin_quote
+From the =:core packages= module.
+#+end_quote
+
+=nerd-icons= does a generally great job giving file names icons. One minor
+niggle I have is that when /I/ open a =.m= file, it's much more likely to be Matlab
+than Objective-C. As such, it'll be switching the icon associated with =.m=.
+
+#+begin_src emacs-lisp
+(after! nerd-icons
+  (setcdr (assoc "m" nerd-icons-extension-icon-alist)
+          (cdr (assoc "matlab" nerd-icons-extension-icon-alist))))
+#+end_src
+
+*** Prettier page breaks
+
+#+call: confpkg("!Pkg page break lines")
+
+In some files, =^L= appears as a page break character. This isn't that visually
+appealing, and Steve Purcell has been nice enough to make a package to display
+these as horizontal rules.
+#+begin_src emacs-lisp :tangle packages.el
+(package! page-break-lines :recipe (:host github :repo "purcell/page-break-lines")
+  :pin "79eca86e0634ac68af862e15c8a236c37f446dcd")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! page-break-lines
+  :commands page-break-lines-mode
+  :init
+  (autoload 'turn-on-page-break-lines-mode "page-break-lines")
+  :config
+  (setq page-break-lines-max-width fill-column)
+  (map! :prefix "g"
+        :desc "Prev page break" :nv "[" #'backward-page
+        :desc "Next page break" :nv "]" #'forward-page))
+#+end_src
+>>>>>>> 24dcb8f022a060ccb065e98a5ce20200d85dbd4b
 
 *** Writeroom
 
@@ -3728,6 +3805,709 @@ SQL can be either the emacsql vector representation, or a string."
                            )))))
 #+end_src
 
+*** Selectric
+
+#+call: confpkg("!Pkg Selectric")
+
+Every so often, you want everyone else to /know/ that you're typing, or just to
+amuse oneself. Introducing: typewriter sounds!
+#+begin_src emacs-lisp :tangle packages.el
+(package! selectric-mode :pin "1840de71f7414b7cd6ce425747c8e26a413233aa")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! selectic-mode
+  :commands selectic-mode)
+#+end_src
+
+*** Wttrin
+
+#+call: confpkg("!Pkg Wttrin")
+
+Hey, let's get the weather in here while we're at it.
+Unfortunately this seems slightly unmaintained ([[https://github.com/bcbcarl/emacs-wttrin/pulls][few open bugfix PRs]]) so let's
+roll our [[file:lisp/wttrin/wttrin.el][own version]].
+#+begin_src emacs-lisp :tangle packages.el
+(package! wttrin :recipe (:local-repo "lisp/wttrin"))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! wttrin
+  :commands wttrin)
+#+end_src
+
+*** Spray
+
+#+call: confpkg("!Pkg Spray")
+
+Why not flash words on the screen. Why not --- hey, it could be fun.
+#+begin_src emacs-lisp :tangle packages.el
+(package! spray :pin "74d9dcfa2e8b38f96a43de9ab0eb13364300cb46")
+#+end_src
+
+It would be nice if Spray's default speed suited me better, and the keybindings
+worked in evil mode. Let's do that and make the display slightly nicer while
+we're at it.
+
+#+begin_src emacs-lisp
+(use-package! spray
+  :commands spray-mode
+  :config
+  (setq spray-wpm 600
+        spray-height 800)
+  (defun spray-mode-hide-cursor ()
+    "Hide or unhide the cursor as is appropriate."
+    (if spray-mode
+        (setq-local spray--last-evil-cursor-state evil-normal-state-cursor
+                    evil-normal-state-cursor '(nil))
+      (setq-local evil-normal-state-cursor spray--last-evil-cursor-state)))
+  (add-hook 'spray-mode-hook #'spray-mode-hide-cursor)
+  (map! :map spray-mode-map
+        "<return>" #'spray-start/stop
+        "f" #'spray-faster
+        "s" #'spray-slower
+        "t" #'spray-time
+        "<right>" #'spray-forward-word
+        "h" #'spray-forward-word
+        "<left>" #'spray-backward-word
+        "l" #'spray-backward-word
+        "q" #'spray-quit))
+#+end_src
+
+*** Elcord
+
+#+call: confpkg("!Pkg Elcord")
+
+What's even the point of using Emacs unless you're constantly telling everyone
+about it?
+#+begin_src emacs-lisp :tangle packages.el
+(package! elcord :pin "d0c9ace493d088bc70f7422705ff27dfcf162cca")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! elcord
+  :commands elcord-mode
+  :config
+  (setq elcord-use-major-mode-as-main-icon t))
+#+end_src
+
+** File types
+*** Systemd
+
+#+call: confpkg("!Pkg Systemd")
+
+For editing systemd unit files
+#+begin_src emacs-lisp :tangle packages.el
+(package! systemd :pin "b6ae63a236605b1c5e1069f7d3afe06ae32a7bae")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! systemd
+  :defer t)
+#+end_src
+
+* Applications
+** Ebooks
+
+#+call: confpkg()
+
+[[xkcd:548]]
+
+For managing my ebooks, I'll hook into the well-established ebook library
+manager [[https://calibre-ebook.com/][calibre]]. A number of Emacs clients for this exist, but this seems like a
+good option.
+#+begin_src emacs-lisp :tangle packages.el
+(package! calibredb :pin "2f2cfc38f2d1c705134b692127c3008ac1382482")
+#+end_src
+
+Then for reading them, the only currently viable options seems to be [[https://depp.brause.cc/nov.el/][nov.el]].
+#+begin_src emacs-lisp :tangle packages.el
+(package! nov :pin "cb5f45cbcfbcf263cdeb2d263eb15edefc8b07cb")
+#+end_src
+
+Together these should give me a rather good experience reading ebooks.
+
+=calibredb= lets us use calibre through Emacs, because who wouldn't want to use
+something through Emacs?
+#+begin_src emacs-lisp
+(use-package! calibredb
+  :commands calibredb
+  :config
+  (setq calibredb-root-dir "~/Desktop/TEC/Other/Ebooks"
+        calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
+  (map! :map calibredb-show-mode-map
+        :ne "?" #'calibredb-entry-dispatch
+        :ne "o" #'calibredb-find-file
+        :ne "O" #'calibredb-find-file-other-frame
+        :ne "V" #'calibredb-open-file-with-default-tool
+        :ne "s" #'calibredb-set-metadata-dispatch
+        :ne "e" #'calibredb-export-dispatch
+        :ne "q" #'calibredb-entry-quit
+        :ne "." #'calibredb-open-dired
+        :ne [tab] #'calibredb-toggle-view-at-point
+        :ne "M-t" #'calibredb-set-metadata--tags
+        :ne "M-a" #'calibredb-set-metadata--author_sort
+        :ne "M-A" #'calibredb-set-metadata--authors
+        :ne "M-T" #'calibredb-set-metadata--title
+        :ne "M-c" #'calibredb-set-metadata--comments)
+  (map! :map calibredb-search-mode-map
+        :ne [mouse-3] #'calibredb-search-mouse
+        :ne "RET" #'calibredb-find-file
+        :ne "?" #'calibredb-dispatch
+        :ne "a" #'calibredb-add
+        :ne "A" #'calibredb-add-dir
+        :ne "c" #'calibredb-clone
+        :ne "d" #'calibredb-remove
+        :ne "D" #'calibredb-remove-marked-items
+        :ne "j" #'calibredb-next-entry
+        :ne "k" #'calibredb-previous-entry
+        :ne "l" #'calibredb-virtual-library-list
+        :ne "L" #'calibredb-library-list
+        :ne "n" #'calibredb-virtual-library-next
+        :ne "N" #'calibredb-library-next
+        :ne "p" #'calibredb-virtual-library-previous
+        :ne "P" #'calibredb-library-previous
+        :ne "s" #'calibredb-set-metadata-dispatch
+        :ne "S" #'calibredb-switch-library
+        :ne "o" #'calibredb-find-file
+        :ne "O" #'calibredb-find-file-other-frame
+        :ne "v" #'calibredb-view
+        :ne "V" #'calibredb-open-file-with-default-tool
+        :ne "." #'calibredb-open-dired
+        :ne "b" #'calibredb-catalog-bib-dispatch
+        :ne "e" #'calibredb-export-dispatch
+        :ne "r" #'calibredb-search-refresh-and-clear-filter
+        :ne "R" #'calibredb-search-clear-filter
+        :ne "q" #'calibredb-search-quit
+        :ne "m" #'calibredb-mark-and-forward
+        :ne "f" #'calibredb-toggle-favorite-at-point
+        :ne "x" #'calibredb-toggle-archive-at-point
+        :ne "h" #'calibredb-toggle-highlight-at-point
+        :ne "u" #'calibredb-unmark-and-forward
+        :ne "i" #'calibredb-edit-annotation
+        :ne "DEL" #'calibredb-unmark-and-backward
+        :ne [backtab] #'calibredb-toggle-view
+        :ne [tab] #'calibredb-toggle-view-at-point
+        :ne "M-n" #'calibredb-show-next-entry
+        :ne "M-p" #'calibredb-show-previous-entry
+        :ne "/" #'calibredb-search-live-filter
+        :ne "M-t" #'calibredb-set-metadata--tags
+        :ne "M-a" #'calibredb-set-metadata--author_sort
+        :ne "M-A" #'calibredb-set-metadata--authors
+        :ne "M-T" #'calibredb-set-metadata--title
+        :ne "M-c" #'calibredb-set-metadata--comments))
+#+end_src
+
+Then, to actually read the ebooks we use =nov=.
+
+#+attr_html: :class invertible :alt Excerpt of the GNU Emacs manual viewed through nov.el
+[[https://tecosaur.com/lfs/emacs-config/screenshots/nov.png]]
+
+#+begin_src emacs-lisp
+(use-package! nov
+  :mode ("\\.epub\\'" . nov-mode)
+  :config
+  (map! :map nov-mode-map
+        :n "RET" #'nov-scroll-up)
+
+  (defun doom-modeline-segment--nov-info ()
+    (concat
+     " "
+     (propertize
+      (cdr (assoc 'creator nov-metadata))
+      'face 'doom-modeline-project-parent-dir)
+     " "
+     (cdr (assoc 'title nov-metadata))
+     " "
+     (propertize
+      (format "%d/%d"
+              (1+ nov-documents-index)
+              (length nov-documents))
+      'face 'doom-modeline-info)))
+
+  (advice-add 'nov-render-title :override #'ignore)
+
+  (defun +nov-mode-setup ()
+    "Tweak nov-mode to our liking."
+    (face-remap-add-relative 'variable-pitch
+                             :family "Merriweather"
+                             :height 1.4
+                             :width 'semi-expanded)
+    (face-remap-add-relative 'default :height 1.3)
+    (setq-local line-spacing 0.2
+                next-screen-context-lines 4
+                shr-use-colors nil)
+    (require 'visual-fill-column nil t)
+    (setq-local visual-fill-column-center-text t
+                visual-fill-column-width 81
+                nov-text-width 80)
+    (visual-fill-column-mode 1)
+    (hl-line-mode -1)
+    ;; Re-render with new display settings
+    (nov-render-document)
+    ;; Look up words with the dictionary.
+    (add-to-list '+lookup-definition-functions #'+lookup/dictionary-definition)
+    ;; Customise the mode-line to make it more minimal and relevant.
+    (setq-local
+     mode-line-format
+     `((:eval
+        (doom-modeline-segment--workspace-name))
+       (:eval
+        (doom-modeline-segment--window-number))
+       (:eval
+        (doom-modeline-segment--nov-info))
+       ,(propertize
+         " %P "
+         'face 'doom-modeline-buffer-minor-mode)
+       ,(propertize
+         " "
+         'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive)
+         'display `((space
+                     :align-to
+                     (- (+ right right-fringe right-margin)
+                        ,(* (let ((width (doom-modeline--font-width)))
+                              (or (and (= width 1) 1)
+                                  (/ width (frame-char-width) 1.0)))
+                            (string-width
+                             (format-mode-line (cons "" '(:eval (doom-modeline-segment--major-mode))))))))))
+       (:eval (doom-modeline-segment--major-mode)))))
+
+  (add-hook 'nov-mode-hook #'+nov-mode-setup))
+#+end_src
+
+** Calculator
+
+#+call: confpkg()
+
+Emacs includes the venerable =calc=, which is a pretty impressive RPN (Reverse
+Polish Notation) calculator. However, we can do a bit to improve the experience.
+
+*** CalcTeX
+
+Everybody knows that mathematical expressions look best with LaTeX, so =calc='s
+ability to create LaTeX representations of its expressions provides a lovely
+opportunity which is taken advantage of in the CalcTeX package.
+
+#+begin_src emacs-lisp :tangle packages.el
+(package! calctex :recipe (:host github :repo "johnbcoughlin/calctex"
+                           :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor"))
+  :pin "67a2e76847a9ea9eff1f8e4eb37607f84b380ebb")
+#+end_src
+
+#+attr_html: :class invertible :alt Demonstration of calc, prettified by calctex.
+[[https://tecosaur.com/lfs/emacs-config/screenshots/calc-with-calctex.png]]
+
+We'd like to use CalcTeX too, so let's set that up, and fix some glaring
+inadequacies --- why on earth would you commit a hard-coded path to an executable
+that /only works on your local machine/, consequently breaking the package for
+everyone else!?
+
+#+begin_src emacs-lisp
+(use-package! calctex
+  :commands calctex-mode
+  :init
+  (add-hook 'calc-mode-hook #'calctex-mode)
+  :config
+  (setq calctex-additional-latex-packages "
+\\usepackage[usenames]{xcolor}
+\\usepackage{soul}
+\\usepackage{adjustbox}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{siunitx}
+\\usepackage{cancel}
+\\usepackage{mathtools}
+\\usepackage{mathalpha}
+\\usepackage{xparse}
+\\usepackage{arevmath}"
+        calctex-additional-latex-macros
+        (concat calctex-additional-latex-macros
+                "\n\\let\\evalto\\Rightarrow"))
+  (defadvice! no-messaging-a (orig-fn &rest args)
+    :around #'calctex-default-dispatching-render-process
+    (let ((inhibit-message t) message-log-max)
+      (apply orig-fn args)))
+  ;; Fix hardcoded dvichop path (whyyyyyyy)
+  (let ((vendor-folder (concat (file-truename doom-local-dir)
+                               "straight/"
+                               (format "build-%s" emacs-version)
+                               "/calctex/vendor/")))
+    (setq calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
+          calctex-dvichop-bin (concat vendor-folder "texd/dvichop")))
+  (unless (file-exists-p calctex-dvichop-bin)
+    (message "CalcTeX: Building dvichop binary")
+    (let ((default-directory (file-name-directory calctex-dvichop-bin)))
+      (call-process "make" nil nil nil))))
+#+end_src
+
+*** Defaults
+
+Any sane person prefers radians and exact values.
+
+#+begin_src emacs-lisp
+(setq calc-angle-mode 'rad  ; radians are rad
+      calc-symbolic-mode t) ; keeps expressions like \sqrt{2} irrational for as long as possible
+#+end_src
+
+*** Embedded calc
+
+Embedded calc is a lovely feature which let's us use calc to operate on LaTeX
+maths expressions. The standard keybinding is a bit janky however (=C-x * e=), so
+we'll add a localleader-based alternative.
+
+#+begin_src emacs-lisp
+(map! :map calc-mode-map
+      :after calc
+      :localleader
+      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
+(map! :map org-mode-map
+      :after org
+      :localleader
+      :desc "Embedded calc (toggle)" "E" #'calc-embedded)
+(map! :map latex-mode-map
+      :after latex
+      :localleader
+      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
+#+end_src
+
+Unfortunately this operates without the (rather informative) calculator and
+trail buffers, but we can advice it that we would rather like those in a side
+panel.
+
+#+begin_src emacs-lisp
+(defvar calc-embedded-trail-window nil)
+(defvar calc-embedded-calculator-window nil)
+
+(defadvice! calc-embedded-with-side-pannel (&rest _)
+  :after #'calc-do-embedded
+  (when calc-embedded-trail-window
+    (ignore-errors
+      (delete-window calc-embedded-trail-window))
+    (setq calc-embedded-trail-window nil))
+  (when calc-embedded-calculator-window
+    (ignore-errors
+      (delete-window calc-embedded-calculator-window))
+    (setq calc-embedded-calculator-window nil))
+  (when (and calc-embedded-info
+             (> (* (window-width) (window-height)) 1200))
+    (let ((main-window (selected-window))
+          (vertical-p (> (window-width) 80)))
+      (select-window
+       (setq calc-embedded-trail-window
+             (if vertical-p
+                 (split-window-horizontally (- (max 30 (/ (window-width) 3))))
+               (split-window-vertically (- (max 8 (/ (window-height) 4)))))))
+      (switch-to-buffer "*Calc Trail*")
+      (select-window
+       (setq calc-embedded-calculator-window
+             (if vertical-p
+                 (split-window-vertically -6)
+               (split-window-horizontally (- (/ (window-width) 2))))))
+      (switch-to-buffer "*Calculator*")
+      (select-window main-window))))
+#+end_src
+
+** IRC
+
+#+call: confpkg()
+
+=circe= is a client for IRC in Emacs (hey, isn't that a nice project
+name+acronym), and a greek enchantress who turned humans into animals.
+
+Let's use the former to chat to +recluses+ discerning individuals online.
+
+[[xkcd:1782]]
+
+Before we start seeing and sending messages, we need to authenticate with our
+IRC servers. The circe manual provided a snippet for putting some of the auth
+details in =.authinfo.gpg= --- but I think we should go further than that: have
+the entire server info in our authinfo.
+
+First, a reasonable format by which we can specify:
++ server
++ port
++ SASL username
++ SASL password
++ channels to join
+
+We can have these stored like so
+#+begin_src authinfo
+machine chat.freenode.net login USERNAME password PASSWORD port PORT for irc channels emacs,org-mode
+#+end_src
+
+The ~for irc~ bit is used so we can uniquely identify all IRC auth info. By
+omitting the =#= in channel names we can have a list of channels comma-separated
+(no space!) which the secrets API will return as a single string.
+
+#+name: irc-authinfo-reader
+#+begin_src emacs-lisp :tangle no
+(defun auth-server-pass (server)
+  (if-let ((secret (plist-get (car (auth-source-search :host server)) :secret)))
+      (if (functionp secret)
+          (funcall secret) secret)
+    (error "Could not fetch password for host %s" server)))
+
+(defun register-irc-auths ()
+  (require 'circe)
+  (require 'dash)
+  (let ((accounts (-filter (lambda (a) (string= "irc" (plist-get a :for)))
+                           (auth-source-search :require '(:for) :max 10))))
+    (appendq! circe-network-options
+              (mapcar (lambda (entry)
+                        (let* ((host (plist-get entry :host))
+                               (label (or (plist-get entry :label) host))
+                               (_ports (mapcar #'string-to-number
+                                               (s-split "," (plist-get entry :port))))
+                               (port (if (= 1 (length _ports)) (car _ports) _ports))
+                               (user (plist-get entry :user))
+                               (nick (or (plist-get entry :nick) user))
+                               (channels (mapcar (lambda (c) (concat "#" c))
+                                                 (s-split "," (plist-get entry :channels)))))
+                          `(,label
+                            :host ,host :port ,port :nick ,nick
+                            :sasl-username ,user :sasl-password auth-server-pass
+                            :channels ,channels)))
+                      accounts))))
+#+end_src
+
+We'll just call src_elisp{(register-irc-auths)} on a hook when we start Circe
+up.
+
+Now we're ready to go, let's actually wire-up Circe, with one or two
+configuration tweaks.
+#+begin_src emacs-lisp :noweb no-export
+(after! circe
+  (setq-default circe-use-tls t)
+  (setq circe-notifications-alert-icon "/usr/share/icons/breeze/actions/24/network-connect.svg"
+        lui-logging-directory (expand-file-name "irc" doom-etc-dir)
+        lui-logging-file-format "{buffer}/%Y/%m-%d.txt"
+        circe-format-self-say "{nick:+13s} ┃ {body}")
+
+  (custom-set-faces!
+    '(circe-my-message-face :weight unspecified))
+
+  (enable-lui-logging-globally)
+  (enable-circe-display-images)
+
+  <<org-emph-to-irc>>
+
+  <<circe-emojis>>
+  <<circe-emoji-alists>>
+
+  (defun named-circe-prompt ()
+    (lui-set-prompt
+     (concat (propertize (format "%13s > " (circe-nick))
+                         'face 'circe-prompt-face)
+             "")))
+  (add-hook 'circe-chat-mode-hook #'named-circe-prompt)
+
+  (appendq! nerd-icons-mode-icon-alist
+            '((circe-channel-mode nerd-icons-mdicon "nf-md-message" :face nerd-icons-lblue)
+              (circe-server-mode nerd-icons-mdicon "nf-md-chat_outline" :face nerd-icons-purple))))
+
+<<irc-authinfo-reader>>
+
+(add-transient-hook! #'=irc (register-irc-auths))
+#+end_src
+
+*** Org-style emphasis
+
+Let's do our *bold*, /italic/, and _underline_ in org-syntax, using IRC control characters.
+#+name: org-emph-to-irc
+#+begin_src emacs-lisp
+(defun lui-org-to-irc ()
+  "Examine a buffer with simple org-mode formatting, and converts the empasis:
+,*bold*, /italic/, and _underline_ to IRC semi-standard escape codes.
+=code= is converted to inverse (highlighted) text."
+  (goto-char (point-min))
+  (while (re-search-forward "\\_<\\(?1:[*/_=]\\)\\(?2:[^[:space:]]\\(?:.*?[^[:space:]]\\)?\\)\\1\\_>" nil t)
+    (replace-match
+     (concat (pcase (match-string 1)
+               ("*" "")
+               ("/" "")
+               ("_" "")
+               ("=" ""))
+             (match-string 2)
+             "") nil nil)))
+
+(add-hook 'lui-pre-input-hook #'lui-org-to-irc)
+#+end_src
+
+*** Emojis
+
+Let's setup Circe to use some emojis
+#+name: circe-emojis
+#+begin_src emacs-lisp :tangle no
+(defun lui-ascii-to-emoji ()
+  (goto-char (point-min))
+  (while (re-search-forward "\\( \\)?::?\\([^[:space:]:]+\\):\\( \\)?" nil t)
+    (replace-match
+     (concat
+      (match-string 1)
+      (or (cdr (assoc (match-string 2) lui-emojis-alist))
+          (concat ":" (match-string 2) ":"))
+      (match-string 3))
+     nil nil)))
+
+(defun lui-emoticon-to-emoji ()
+  (dolist (emoticon lui-emoticons-alist)
+    (goto-char (point-min))
+    (while (re-search-forward (concat " " (car emoticon) "\\( \\)?") nil t)
+      (replace-match (concat " "
+                             (cdr (assoc (cdr emoticon) lui-emojis-alist))
+                             (match-string 1))))))
+
+(define-minor-mode lui-emojify
+  "Replace :emojis: and ;) emoticons with unicode emoji chars."
+  :global t
+  :init-value t
+  (if lui-emojify
+      (add-hook! lui-pre-input #'lui-ascii-to-emoji #'lui-emoticon-to-emoji)
+    (remove-hook! lui-pre-input #'lui-ascii-to-emoji #'lui-emoticon-to-emoji)))
+#+end_src
+
+Now, some actual emojis to use.
+#+name: circe-emoji-alists
+#+begin_src emacs-lisp :tangle no
+(defvar lui-emojis-alist
+  '(("grinning"                      . "😀")
+    ("smiley"                        . "😃")
+    ("smile"                         . "😄")
+    ("grin"                          . "😁")
+    ("laughing"                      . "😆")
+    ("sweat_smile"                   . "😅")
+    ("joy"                           . "😂")
+    ("rofl"                          . "🤣")
+    ("relaxed"                       . "☺️")
+    ("blush"                         . "😊")
+    ("innocent"                      . "😇")
+    ("slight_smile"                  . "🙂")
+    ("upside_down"                   . "🙃")
+    ("wink"                          . "😉")
+    ("relieved"                      . "😌")
+    ("heart_eyes"                    . "😍")
+    ("yum"                           . "😋")
+    ("stuck_out_tongue"              . "😛")
+    ("stuck_out_tongue_closed_eyes"  . "😝")
+    ("stuck_out_tongue_wink"         . "😜")
+    ("zanzy"                         . "🤪")
+    ("raised_eyebrow"                . "🤨")
+    ("monocle"                       . "🧐")
+    ("nerd"                          . "🤓")
+    ("cool"                          . "😎")
+    ("star_struck"                   . "🤩")
+    ("party"                         . "🥳")
+    ("smirk"                         . "😏")
+    ("unamused"                      . "😒")
+    ("disapointed"                   . "😞")
+    ("pensive"                       . "😔")
+    ("worried"                       . "😟")
+    ("confused"                      . "😕")
+    ("slight_frown"                  . "🙁")
+    ("frown"                         . "☹️")
+    ("persevere"                     . "😣")
+    ("confounded"                    . "😖")
+    ("tired"                         . "😫")
+    ("weary"                         . "😩")
+    ("pleading"                      . "🥺")
+    ("tear"                          . "😢")
+    ("cry"                           . "😢")
+    ("sob"                           . "😭")
+    ("triumph"                       . "😤")
+    ("angry"                         . "😠")
+    ("rage"                          . "😡")
+    ("exploding_head"                . "🤯")
+    ("flushed"                       . "😳")
+    ("hot"                           . "🥵")
+    ("cold"                          . "🥶")
+    ("scream"                        . "😱")
+    ("fearful"                       . "😨")
+    ("disapointed"                   . "😰")
+    ("relieved"                      . "😥")
+    ("sweat"                         . "😓")
+    ("thinking"                      . "🤔")
+    ("shush"                         . "🤫")
+    ("liar"                          . "🤥")
+    ("blank_face"                    . "😶")
+    ("neutral"                       . "😐")
+    ("expressionless"                . "😑")
+    ("grimace"                       . "😬")
+    ("rolling_eyes"                  . "🙄")
+    ("hushed"                        . "😯")
+    ("frowning"                      . "😦")
+    ("anguished"                     . "😧")
+    ("wow"                           . "😮")
+    ("astonished"                    . "😲")
+    ("sleeping"                      . "😴")
+    ("drooling"                      . "🤤")
+    ("sleepy"                        . "😪")
+    ("dizzy"                         . "😵")
+    ("zipper_mouth"                  . "🤐")
+    ("woozy"                         . "🥴")
+    ("sick"                          . "🤢")
+    ("vomiting"                      . "🤮")
+    ("sneeze"                        . "🤧")
+    ("mask"                          . "😷")
+    ("bandaged_head"                 . "🤕")
+    ("money_face"                    . "🤑")
+    ("cowboy"                        . "🤠")
+    ("imp"                           . "😈")
+    ("ghost"                         . "👻")
+    ("alien"                         . "👽")
+    ("robot"                         . "🤖")
+    ("clap"                          . "👏")
+    ("thumpup"                       . "👍")
+    ("+1"                            . "👍")
+    ("thumbdown"                     . "👎")
+    ("-1"                            . "👎")
+    ("ok"                            . "👌")
+    ("pinch"                         . "🤏")
+    ("left"                          . "👈")
+    ("right"                         . "👉")
+    ("down"                          . "👇")
+    ("wave"                          . "👋")
+    ("pray"                          . "🙏")
+    ("eyes"                          . "👀")
+    ("brain"                         . "🧠")
+    ("facepalm"                      . "🤦")
+    ("tada"                          . "🎉")
+    ("fire"                          . "🔥")
+    ("flying_money"                  . "💸")
+    ("lighbulb"                      . "💡")
+    ("heart"                         . "❤️")
+    ("sparkling_heart"               . "💖")
+    ("heartbreak"                    . "💔")
+    ("100"                           . "💯")))
+
+(defvar lui-emoticons-alist
+  '((":)"   . "slight_smile")
+    (";)"   . "wink")
+    (":D"   . "smile")
+    ("=D"   . "grin")
+    ("xD"   . "laughing")
+    (";("   . "joy")
+    (":P"   . "stuck_out_tongue")
+    (";D"   . "stuck_out_tongue_wink")
+    ("xP"   . "stuck_out_tongue_closed_eyes")
+    (":("   . "slight_frown")
+    (";("   . "cry")
+    (";'("  . "sob")
+    (">:("  . "angry")
+    (">>:(" . "rage")
+    (":o"   . "wow")
+    (":O"   . "astonished")
+    (":/"   . "confused")
+    (":-/"  . "thinking")
+    (":|"   . "neutral")
+    (":-|"  . "expressionless")))
+#+end_src
+
+** Mail
+
+#+call: confpkg(after="mu4e", via="require", pre="org-msg-accent")
+
+[[xkcd:1467]]
+
 * Language configuration
 ** General
 *** File Templates
@@ -4082,9 +4862,9 @@ with =citar=, and make the symbols a bit prettier.
           paths)
         citar-bibliography org-cite-global-bibliography
         citar-symbols
-        `((file ,(all-the-icons-faicon "file-o" :face 'all-the-icons-green :v-adjust -0.1) . " ")
-          (note ,(all-the-icons-material "speaker_notes" :face 'all-the-icons-blue :v-adjust -0.3) . " ")
-          (link ,(all-the-icons-octicon "link" :face 'all-the-icons-orange :v-adjust 0.01) . " "))))
+        `((file ,(nerd-icons-faicon "nf-fa-file_o" :face 'nerd-icons-green :v-adjust -0.1) . " ")
+          (note ,(nerd-icons-octicon "nf-oct-note" :face 'nerd-icons-blue :v-adjust -0.3) . " ")
+          (link ,(nerd-icons-octicon "nf-oct-link" :face 'nerd-icons-orange :v-adjust 0.01) . " "))))
 #+end_src
 
 We can also make the Zotero CSL styles available to use.
@@ -4194,6 +4974,429 @@ Now, by default, LSPs don't really function at all in ~src~ blocks.
   '("go" "python" "ipython" "bash" "sh"))
 (dolist (lang org-babel-lang-list)
   (eval `(lsp-org-babel-enable ,lang)))
+#+end_src
+
+***** View exported file
+
+='localeader v= has no pre-existing binding, so I may as well use it with the same
+functionality as in LaTeX. Let's try viewing possible output files with this.
+#+begin_src emacs-lisp
+(map! :map org-mode-map
+      :localleader
+      :desc "View exported file" "v" #'org-view-output-file)
+
+(defun org-view-output-file (&optional org-file-path)
+  "Visit buffer open on the first output file (if any) found, using `org-view-output-file-extensions'"
+  (interactive)
+  (let* ((org-file-path (or org-file-path (buffer-file-name) ""))
+         (dir (file-name-directory org-file-path))
+         (basename (file-name-base org-file-path))
+         (output-file nil))
+    (dolist (ext org-view-output-file-extensions)
+      (unless output-file
+        (when (file-exists-p
+               (concat dir basename "." ext))
+          (setq output-file (concat dir basename "." ext)))))
+    (if output-file
+        (if (member (file-name-extension output-file) org-view-external-file-extensions)
+            (browse-url-xdg-open output-file)
+          (pop-to-buffer (or (find-buffer-visiting output-file)
+                             (find-file-noselect output-file))))
+      (message "No exported file found"))))
+
+(defvar org-view-output-file-extensions '("pdf" "md" "rst" "txt" "tex" "html")
+  "Search for output files with these extensions, in order, viewing the first that matches")
+(defvar org-view-external-file-extensions '("html")
+  "File formats that should be opened externally.")
+#+end_src
+
+**** Super agenda
+
+#+call: confpkg("!Pkg Org Super Agenda")
+
+The agenda is nice, but a souped up version is nicer.
+#+begin_src emacs-lisp :tangle packages.el
+(package! org-super-agenda :pin "f4f528985397c833c870967884b013cf91a1da4a")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! org-super-agenda
+  :commands org-super-agenda-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+(after! org-agenda
+  (let ((inhibit-message t))
+    (org-super-agenda-mode)))
+
+(setq org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-deadline-if-done t
+      org-agenda-include-deadlines t
+      org-agenda-block-separator nil
+      org-agenda-tags-column 100 ;; from testing this seems to be a good value
+      org-agenda-compact-blocks t)
+
+(setq org-agenda-custom-commands
+      '(("o" "Overview"
+         ((agenda "" ((org-agenda-span 'day)
+                      (org-super-agenda-groups
+                       '((:name "Today"
+                          :time-grid t
+                          :date today
+                          :todo "TODAY"
+                          :scheduled today
+                          :order 1)))))
+          (alltodo "" ((org-agenda-overriding-header "")
+                       (org-super-agenda-groups
+                        '((:name "Next to do"
+                           :todo "NEXT"
+                           :order 1)
+                          (:name "Important"
+                           :tag "Important"
+                           :priority "A"
+                           :order 6)
+                          (:name "Due Today"
+                           :deadline today
+                           :order 2)
+                          (:name "Due Soon"
+                           :deadline future
+                           :order 8)
+                          (:name "Overdue"
+                           :deadline past
+                           :face error
+                           :order 7)
+                          (:name "Assignments"
+                           :tag "Assignment"
+                           :order 10)
+                          (:name "Issues"
+                           :tag "Issue"
+                           :order 12)
+                          (:name "Emacs"
+                           :tag "Emacs"
+                           :order 13)
+                          (:name "Projects"
+                           :tag "Project"
+                           :order 14)
+                          (:name "Research"
+                           :tag "Research"
+                           :order 15)
+                          (:name "To read"
+                           :tag "Read"
+                           :order 30)
+                          (:name "Waiting"
+                           :todo "WAITING"
+                           :order 20)
+                          (:name "University"
+                           :tag "uni"
+                           :order 32)
+                          (:name "Trivial"
+                           :priority<= "E"
+                           :tag ("Trivial" "Unimportant")
+                           :todo ("SOMEDAY" )
+                           :order 90)
+                          (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
+#+end_src
+
+**** Capture
+
+Let's setup some org-capture templates, and make them visually nice to access.
+
+#+attr_html: :class invertible :alt My org-capture dialouge.
+[[https://tecosaur.com/lfs/emacs-config/screenshots/org-capture.png]]
+
+~doct~ (Declarative Org Capture Templates) seems to be a nicer way to
+set up org-capture.
+#+begin_src emacs-lisp :noweb-ref none :tangle packages.el
+(package! doct
+  :recipe (:host github :repo "progfolio/doct")
+  :pin "8464809754f3316d5a2fdcf3c01ce1e8736b323b")
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! doct
+  :commands doct)
+#+end_src
+
+#+begin_src emacs-lisp :noweb no-export
+(after! org-capture
+  <<prettify-capture>>
+
+  (defun +doct-icon-declaration-to-icon (declaration)
+    "Convert :icon declaration to icon"
+    (let ((name (pop declaration))
+          (set  (intern (concat "nerd-icons-" (plist-get declaration :set))))
+          (face (intern (concat "nerd-icons-" (plist-get declaration :color))))
+          (v-adjust (or (plist-get declaration :v-adjust) 0.01)))
+      (apply set `(,name :face ,face :v-adjust ,v-adjust))))
+
+  (defun +doct-iconify-capture-templates (groups)
+    "Add declaration's :icon to each template group in GROUPS."
+    (let ((templates (doct-flatten-lists-in groups)))
+      (setq doct-templates (mapcar (lambda (template)
+                                     (when-let* ((props (nthcdr (if (= (length template) 4) 2 5) template))
+                                                 (spec (plist-get (plist-get props :doct) :icon)))
+                                       (setf (nth 1 template) (concat (+doct-icon-declaration-to-icon spec)
+                                                                      "\t"
+                                                                      (nth 1 template))))
+                                     template)
+                                   templates))))
+
+  (setq doct-after-conversion-functions '(+doct-iconify-capture-templates))
+
+  (defvar +org-capture-recipies  "~/Desktop/TEC/Organisation/recipies.org")
+
+  (defun set-org-capture-templates ()
+    (setq org-capture-templates
+          (doct `(("Personal todo" :keys "t"
+                   :icon ("nf-oct-checklist" :set "octicon" :color "green")
+                   :file +org-capture-todo-file
+                   :prepend t
+                   :headline "Inbox"
+                   :type entry
+                   :template ("* TODO %?"
+                              "%i %a"))
+                  ("Personal note" :keys "n"
+                   :icon ("nf-fa-sticky_note_o" :set "faicon" :color "green")
+                   :file +org-capture-todo-file
+                   :prepend t
+                   :headline "Inbox"
+                   :type entry
+                   :template ("* %?"
+                              "%i %a"))
+                  ("Email" :keys "e"
+                   :icon ("nf-fa-envelope" :set "faicon" :color "blue")
+                   :file +org-capture-todo-file
+                   :prepend t
+                   :headline "Inbox"
+                   :type entry
+                   :template ("* TODO %^{type|reply to|contact} %\\3 %? :email:"
+                              "Send an email %^{urgancy|soon|ASAP|anon|at some point|eventually} to %^{recipiant}"
+                              "about %^{topic}"
+                              "%U %i %a"))
+                  ("Interesting" :keys "i"
+                   :icon ("nf-fa-eye" :set "faicon" :color "lcyan")
+                   :file +org-capture-todo-file
+                   :prepend t
+                   :headline "Interesting"
+                   :type entry
+                   :template ("* [ ] %{desc}%? :%{i-type}:"
+                              "%i %a")
+                   :children (("Webpage" :keys "w"
+                               :icon ("nf-fa-globe" :set "faicon" :color "green")
+                               :desc "%(org-cliplink-capture) "
+                               :i-type "read:web")
+                              ("Article" :keys "a"
+                               :icon ("nf-fa-file_text_o" :set "faicon" :color "yellow")
+                               :desc ""
+                               :i-type "read:reaserch")
+                              ("\tRecipie" :keys "r"
+                               :icon ("nf-fa-spoon" :set "faicon" :color "dorange")
+                               :file +org-capture-recipies
+                               :headline "Unsorted"
+                               :template "%(org-chef-get-recipe-from-url)")
+                              ("Information" :keys "i"
+                               :icon ("nf-fa-info_circle" :set "faicon" :color "blue")
+                               :desc ""
+                               :i-type "read:info")
+                              ("Idea" :keys "I"
+                               :icon ("nf-md-chart_bubble" :set "mdicon" :color "silver")
+                               :desc ""
+                               :i-type "idea")))
+                  ("Tasks" :keys "k"
+                   :icon ("nf-oct-inbox" :set "octicon" :color "yellow")
+                   :file +org-capture-todo-file
+                   :prepend t
+                   :headline "Tasks"
+                   :type entry
+                   :template ("* TODO %? %^G%{extra}"
+                              "%i %a")
+                   :children (("General Task" :keys "k"
+                               :icon ("nf-oct-inbox" :set "octicon" :color "yellow")
+                               :extra "")
+                              ("Task with deadline" :keys "d"
+                               :icon ("nf-md-timer" :set "mdicon" :color "orange" :v-adjust -0.1)
+                               :extra "\nDEADLINE: %^{Deadline:}t")
+                              ("Scheduled Task" :keys "s"
+                               :icon ("nf-oct-calendar" :set "octicon" :color "orange")
+                               :extra "\nSCHEDULED: %^{Start time:}t")))
+                  ("Project" :keys "p"
+                   :icon ("nf-oct-repo" :set "octicon" :color "silver")
+                   :prepend t
+                   :type entry
+                   :headline "Inbox"
+                   :template ("* %{time-or-todo} %?"
+                              "%i"
+                              "%a")
+                   :file ""
+                   :custom (:time-or-todo "")
+                   :children (("Project-local todo" :keys "t"
+                               :icon ("nf-oct-checklist" :set "octicon" :color "green")
+                               :time-or-todo "TODO"
+                               :file +org-capture-project-todo-file)
+                              ("Project-local note" :keys "n"
+                               :icon ("nf-fa-sticky_note" :set "faicon" :color "yellow")
+                               :time-or-todo "%U"
+                               :file +org-capture-project-notes-file)
+                              ("Project-local changelog" :keys "c"
+                               :icon ("nf-fa-list" :set "faicon" :color "blue")
+                               :time-or-todo "%U"
+                               :heading "Unreleased"
+                               :file +org-capture-project-changelog-file)))
+                  ("\tCentralised project templates"
+                   :keys "o"
+                   :type entry
+                   :prepend t
+                   :template ("* %{time-or-todo} %?"
+                              "%i"
+                              "%a")
+                   :children (("Project todo"
+                               :keys "t"
+                               :prepend nil
+                               :time-or-todo "TODO"
+                               :heading "Tasks"
+                               :file +org-capture-central-project-todo-file)
+                              ("Project note"
+                               :keys "n"
+                               :time-or-todo "%U"
+                               :heading "Notes"
+                               :file +org-capture-central-project-notes-file)
+                              ("Project changelog"
+                               :keys "c"
+                               :time-or-todo "%U"
+                               :heading "Unreleased"
+                               :file +org-capture-central-project-changelog-file)))))))
+
+  (set-org-capture-templates)
+  (unless (display-graphic-p)
+    (add-hook 'server-after-make-frame-hook
+              (defun org-capture-reinitialise-hook ()
+                (when (display-graphic-p)
+                  (set-org-capture-templates)
+                  (remove-hook 'server-after-make-frame-hook
+                               #'org-capture-reinitialise-hook))))))
+#+end_src
+It would also be nice to improve how the capture dialogue looks
+#+name: prettify-capture
+#+begin_src emacs-lisp :noweb-ref none
+(defun org-capture-select-template-prettier (&optional keys)
+  "Select a capture template, in a prettier way than default
+Lisp programs can force the template by setting KEYS to a string."
+  (let ((org-capture-templates
+         (or (org-contextualize-keys
+              (org-capture-upgrade-templates org-capture-templates)
+              org-capture-templates-contexts)
+             '(("t" "Task" entry (file+headline "" "Tasks")
+                "* TODO %?\n  %u\n  %a")))))
+    (if keys
+        (or (assoc keys org-capture-templates)
+            (error "No capture template referred to by \"%s\" keys" keys))
+      (org-mks org-capture-templates
+               "Select a capture template\n━━━━━━━━━━━━━━━━━━━━━━━━━"
+               "Template key: "
+               `(("q" ,(concat (nerd-icons-octicon "nf-oct-stop" :face 'nerd-icons-red :v-adjust 0.01) "\tAbort")))))))
+(advice-add 'org-capture-select-template :override #'org-capture-select-template-prettier)
+
+(defun org-mks-pretty (table title &optional prompt specials)
+  "Select a member of an alist with multiple keys. Prettified.
+
+TABLE is the alist which should contain entries where the car is a string.
+There should be two types of entries.
+
+1. prefix descriptions like (\"a\" \"Description\")
+   This indicates that `a' is a prefix key for multi-letter selection, and
+   that there are entries following with keys like \"ab\", \"ax\"…
+
+2. Select-able members must have more than two elements, with the first
+   being the string of keys that lead to selecting it, and the second a
+   short description string of the item.
+
+The command will then make a temporary buffer listing all entries
+that can be selected with a single key, and all the single key
+prefixes.  When you press the key for a single-letter entry, it is selected.
+When you press a prefix key, the commands (and maybe further prefixes)
+under this key will be shown and offered for selection.
+
+TITLE will be placed over the selection in the temporary buffer,
+PROMPT will be used when prompting for a key.  SPECIALS is an
+alist with (\"key\" \"description\") entries.  When one of these
+is selected, only the bare key is returned."
+  (save-window-excursion
+    (let ((inhibit-quit t)
+          (buffer (org-switch-to-buffer-other-window "*Org Select*"))
+          (prompt (or prompt "Select: "))
+          case-fold-search
+          current)
+      (unwind-protect
+          (catch 'exit
+            (while t
+              (setq-local evil-normal-state-cursor (list nil))
+              (erase-buffer)
+              (insert title "\n\n")
+              (let ((des-keys nil)
+                    (allowed-keys '("\C-g"))
+                    (tab-alternatives '("\s" "\t" "\r"))
+                    (cursor-type nil))
+                ;; Populate allowed keys and descriptions keys
+                ;; available with CURRENT selector.
+                (let ((re (format "\\`%s\\(.\\)\\'"
+                                  (if current (regexp-quote current) "")))
+                      (prefix (if current (concat current " ") "")))
+                  (dolist (entry table)
+                    (pcase entry
+                      ;; Description.
+                      (`(,(and key (pred (string-match re))) ,desc)
+                       (let ((k (match-string 1 key)))
+                         (push k des-keys)
+                         ;; Keys ending in tab, space or RET are equivalent.
+                         (if (member k tab-alternatives)
+                             (push "\t" allowed-keys)
+                           (push k allowed-keys))
+                         (insert (propertize prefix 'face 'font-lock-comment-face) (propertize k 'face 'bold) (propertize "›" 'face 'font-lock-comment-face) "  " desc "…" "\n")))
+                      ;; Usable entry.
+                      (`(,(and key (pred (string-match re))) ,desc . ,_)
+                       (let ((k (match-string 1 key)))
+                         (insert (propertize prefix 'face 'font-lock-comment-face) (propertize k 'face 'bold) "   " desc "\n")
+                         (push k allowed-keys)))
+                      (_ nil))))
+                ;; Insert special entries, if any.
+                (when specials
+                  (insert "─────────────────────────\n")
+                  (pcase-dolist (`(,key ,description) specials)
+                    (insert (format "%s   %s\n" (propertize key 'face '(bold nerd-icons-red)) description))
+                    (push key allowed-keys)))
+                ;; Display UI and let user select an entry or
+                ;; a sub-level prefix.
+                (goto-char (point-min))
+                (unless (pos-visible-in-window-p (point-max))
+                  (org-fit-window-to-buffer))
+                (let ((pressed (org--mks-read-key allowed-keys
+                                                  prompt
+                                                  (not (pos-visible-in-window-p (1- (point-max)))))))
+                  (setq current (concat current pressed))
+                  (cond
+                   ((equal pressed "\C-g") (user-error "Abort"))
+                   ;; Selection is a prefix: open a new menu.
+                   ((member pressed des-keys))
+                   ;; Selection matches an association: return it.
+                   ((let ((entry (assoc current table)))
+                      (and entry (throw 'exit entry))))
+                   ;; Selection matches a special entry: return the
+                   ;; selection prefix.
+                   ((assoc current specials) (throw 'exit current))
+                   (t (error "No entry available")))))))
+        (when buffer (kill-buffer buffer))))))
+(advice-add 'org-mks :override #'org-mks-pretty)
+#+end_src
+The [[file:~/.config/emacs/bin/org-capture][org-capture bin]] is rather nice, but I'd be nicer with a smaller frame, and
+no modeline.
+#+begin_src emacs-lisp
+(setf (alist-get 'height +org-capture-frame-parameters) 15)
+;; (alist-get 'name +org-capture-frame-parameters) "❖ Capture") ;; ATM hardcoded in other places, so changing breaks stuff
+(setq +org-capture-fn
+      (lambda ()
+        (interactive)
+        (set-window-parameter nil 'mode-line-format 'none)
+        (org-capture)))
 #+end_src
 
 **** Nicer generated heading IDs
@@ -4737,11 +5940,11 @@ and add an extra ~org-bullet~ to the default list of four.
       org-priority-highest ?A
       org-priority-lowest ?E
       org-priority-faces
-      '((?A . 'all-the-icons-red)
-        (?B . 'all-the-icons-orange)
-        (?C . 'all-the-icons-yellow)
-        (?D . 'all-the-icons-green)
-        (?E . 'all-the-icons-blue)))
+      '((?A . 'nerd-icons-red)
+        (?B . 'nerd-icons-orange)
+        (?C . 'nerd-icons-yellow)
+        (?D . 'nerd-icons-green)
+        (?E . 'nerd-icons-blue)))
 #+end_src
 
 It's also nice to make use of the =prettify-symbols-mode= for a few Org syntactic
@@ -4758,11 +5961,11 @@ other settings.
                 :arrow_lr      "↔"
                 :properties    "⚙"
                 :end           "∎"
-                :priority_a    #("⚑" 0 1 (face all-the-icons-red))
-                :priority_b    #("⬆" 0 1 (face all-the-icons-orange))
-                :priority_c    #("■" 0 1 (face all-the-icons-yellow))
-                :priority_d    #("⬇" 0 1 (face all-the-icons-green))
-                :priority_e    #("❓" 0 1 (face all-the-icons-blue))))
+                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
+                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
+                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
+                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
+                :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
 
 (defadvice! +org-init-appearance-h--no-ligatures-a ()
   :after #'+org-init-appearance-h
@@ -6430,3 +7633,108 @@ sixth greyed out. Since the sixth level is so small, I'll turn up the boldness a
   '(markdown-header-face-6 :height 0.75 :weight extra-bold :inherit markdown-header-face))
 #+end_src
 
+** GIMP Palette files
+
+#+call: confpkg("gimp-palette")
+
+I like using colour schemes with Inkscape, and it uses "GIMP Palette" colour
+scheme definition files. It's easy to edit them by hand, but often a bit annoying
+as you need to keep the RGB code and hex representation in sync. Let's make that
+a little easier by writing a little major mode for it.
+
+The major mode doesn't need to do much, just try to turn ~rainbow-mode~ on for
+ pretty hex colours, turn off ~hl-line-mode~ (if required) so the =hl-line= face
+ doesn't overshadow them, and then the most crucial part: syncing the RGB/hex
+ colour specifications on every buffer modification.
+
+To catch all relevant modifications, but not trigger more frequently than needed
+(as would happen if using ~post-command-hook~, for example),
+~after-change-functions~ is the perfect option. We can make a buffer-local
+addition that will sync all colours in the modified region.
+
+#+begin_src emacs-lisp
+(define-derived-mode gimp-palette-mode fundamental-mode "GIMP Palette"
+  "A major mode for GIMP Palette (.gpl) files that keeps RGB and Hex colors in sync."
+  (when (require 'rainbow-mode)
+    (rainbow-mode 1))
+  (when (bound-and-true-p hl-line-mode)
+    (hl-line-mode -1))
+  (add-hook 'after-change-functions #'gimp-palette-update-region nil t))
+#+end_src
+
+Now we need to implement the ~gimp-palette-update-region~ function. If we plan on
+implementing a per-line update function, this is simply a matter of calling it
+on each line with a few quality of life improvements:
++ Batching all the changes into a single undo step (via ~undo-amalgamate-change-group~)
++ Working interactively with a selected region, or the whole buffer.
+
+#+begin_src emacs-lisp
+(defun gimp-palette-update-region (beg end &optional _)
+  "Update each line between BEG and END with `gimp-palette-update-line'.
+If run interactively without a region set, the whole buffer is affected."
+  (interactive
+   (if (region-active-p)
+       (list (region-beginning) (region-end))
+     (list (point-min) (point-max))))
+  (let ((marker (prepare-change-group)))
+    (unwind-protect
+        (save-excursion
+          (goto-char beg)
+          (while (< (point) end)
+            (gimp-palette-update-line)
+            (forward-line 1)))
+      (undo-amalgamate-change-group marker))))
+#+end_src
+
+Now we need to implement the per-line update function. This won't be a
+particularly short function, but it isn't complicated either. It should work as
+follows:
+1. Check to see whether the line starts with =R G B #HEX= 
+2. Check that ~point~ is within the RGB/hex part of the linen
+3. If on the hex part, parse the hex string and update the RGB to match
+   (inserting the RGB component if it does not already exist)
+4. If on the RGB part, update the hex part to match
+
+#+begin_src emacs-lisp
+(defun gimp-palette-update-line ()
+  "Update the RGB and Hex colour codes on the current line.
+Whichever `point' is currently on is taken as the source of truth."
+  (interactive)
+  (let ((column (current-column))
+        (ipoint (point)))
+    (beginning-of-line)
+    (when (and (re-search-forward "\\=\\([0-9 ]*\\)\\(#[0-9A-Fa-f]\\{6\\}\\)" nil t)
+               (<= column (length (match-string 0))))
+      (cond
+       ((>= column (length (match-string 1))) ; Point in #HEX
+        (cl-destructuring-bind (r g b) (color-name-to-rgb (match-string 2))
+          (replace-match
+           (format "%3d %3d %3d "
+                   (round (* 255 r))
+                   (round (* 255 g))
+                   (round (* 255 b)))
+           nil t nil 1)))
+       ((string-match-p "\\`[0-9]+ +[0-9]+ +[0-9]+\\'" (match-string 1)) ; Valid R G B
+        (cl-destructuring-bind (r g b)
+            (mapcar #'string-to-number
+                    (save-match-data
+                      (split-string (match-string 1) " +" t)))
+          (replace-match
+           (format "%3d %3d %3d " r g b)
+           nil t nil 1)
+          (replace-match
+           (color-rgb-to-hex (/ r 255.0) (/ g 255.0) (/ b 255.0) 2)
+           nil t nil 2)))))
+    (goto-char ipoint)))
+#+end_src
+   
+The last thing that's needed to make this functionality convenient is to have it
+automatically activate when appropriate. GIMP palette files re-use the =.gpl=
+extension, so ~auto-mode-alist~ isn't a good choice, but we can use the
+~magic-mode-alist~ to use this mode in any file that begins with =GIMP Palette=,
+which is perfect for our needs.
+
+#+begin_src emacs-lisp
+(add-to-list 'magic-mode-alist (cons "\\`GIMP Palette\n" #'gimp-palette-mode))
+#+end_src
+>>>>>>> 24dcb8f022a060ccb065e98a5ce20200d85dbd4b
