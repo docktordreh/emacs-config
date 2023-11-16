@@ -2865,20 +2865,6 @@ All that's left is to hook it into magit
 (magit-delta-mode +1)
 #+end_src
 
-*** Company
-
-#+call: confpkg("!Pkg company")
-
-#+begin_quote
-From the =:completion company= module.
-#+end_quote
-
-#+begin_src emacs-lisp
-(after! company
-  (setq company-show-quick-access t) ;; show quick-access hints behind the candidates
-  (add-hook 'evil-normal-state-entry-hook #'company-abort)) ;; make aborting less annoying.
-#+end_src
-
 **** Plain Text
 
 ~Ispell~ is nice, let's have it in ~text~, ~markdown~, and ~GFM~.
@@ -3451,19 +3437,6 @@ Now, we just identify the files in question.
         "*/_region_.tex"))
 #+end_src
 
-** Languages
-*** Vue
-;;
-;; #+call: confpkg("!Pkg vue")
-;;
-;; #+begin_src emacs-lisp :tangle packages.el
-;; (package! vue-mode)
-;; (package! nvm)
-;; #+end_src
-;;
-;; #+begin_src emacs-lisp
-;; (add-hook 'vue-mode-hook #'lsp!)
-;; #+end_src
 ** Frivolities
 *** xkcd
 
