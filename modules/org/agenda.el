@@ -61,7 +61,6 @@
   (setq org-directory "~/Nextcloud/Documents/org/"
         org-agenda-files
         (list (expand-file-name "inbox.org" org-directory)
-              (expand-file-name "caldav.org" org-directory)
               (expand-file-name "agenda/thesis.org" org-directory)
               (expand-file-name "agenda/uni.org" org-directory)
               (expand-file-name "agenda/work.org" org-directory)

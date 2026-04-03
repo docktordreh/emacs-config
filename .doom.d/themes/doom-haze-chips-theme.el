@@ -1,1 +1,0 @@
-/home/valentin/Projects/doom-haze-chips/doom-haze-chips-theme.el

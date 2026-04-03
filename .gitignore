@@ -4,8 +4,11 @@ _minted-config
 abbrev.el
 config.*
 !config.org
+!config.el
 init.el
+!init.el
 packages.el
+!packages.el
 cli.el
 setup.sh
 
@@ -13,5 +16,4 @@ setup.sh
 !publish/config.html
 
 !.github
-!.doom.d/
-!.doom.d/**
+!.projectile

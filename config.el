@@ -22,7 +22,6 @@
 (load! "modules/org/agenda")
 (load! "modules/org/roam")
 (load! "modules/org/citar")
-(load! "modules/org/caldav")
 
 (load! "modules/commands/org-return-dwim")
 (load! "modules/commands/latex-helpers")
