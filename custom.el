@@ -3,7 +3,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages '(biblio copilot protobuf-mode))
+ '(package-selected-packages
+   '(ansible-vault biblio copilot mermaid-docker-mode mermaid-mode ob-mermaid
+     protobuf-mode scad-mode))
  '(safe-local-variable-values '((eval sh-set-shell "zsh"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
