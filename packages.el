@@ -5,6 +5,7 @@
 ;; on the command line, then restart Emacs for the changes to take effect -- or
 ;; use 'M-x doom/reload'.
 (package! anki-editor)
+(package! nyan-mode)
 
 ;; To install SOME-PACKAGE from MELPA, ELPA or emacsmirror:
 ;; (package! some-package)
@@ -56,13 +57,14 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
 
+(package! shell-maker)
+(package! acp)
+(package! agent-shell)
 
 (package! calctex :recipe (:host github :repo "johnbcoughlin/calctex"
                            :files ("*.el" "calctex/*.el" "calctex-contrib/*.el" "org-calctex/*.el" "vendor"))
 
   :pin "67a2e76847a9ea9eff1f8e4eb37607f84b380ebb")
-                                        ;(package! copilot
-                                        ;  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
 
 (package! rainbow-delimiters)
 (package! rainbow-mode)

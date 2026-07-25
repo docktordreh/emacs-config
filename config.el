@@ -7,10 +7,10 @@
 (load! "modules/ui/theme")
 (load! "modules/ui/fonts")
 (load! "modules/ui/line-numbers")
+(load! "modules/ui/nyan-mode")
 (load! "modules/ui/dashboard")
 
 (load! "modules/editing/prog")
-(load! "modules/editing/copilot")
 (load! "modules/editing/python")
 
 (load! "modules/projects/projectile")
