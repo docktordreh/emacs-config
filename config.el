@@ -23,6 +23,8 @@
 (load! "modules/org/agenda")
 (load! "modules/org/roam")
 (load! "modules/org/citar")
+(load! "modules/org/latex")
+(load! "modules/org/mermaid")
 
 (load! "modules/commands/org-return-dwim")
 (load! "modules/commands/latex-helpers")
@@ -30,3 +32,6 @@
 
 (load! "modules/system/tty-exwm")
 (load! "modules/system/gpg")
+(after! org
+  (require 'ox-extra)
+  (ox-extras-activate '(ignore-headlines)))
