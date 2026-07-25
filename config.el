@@ -12,6 +12,7 @@
 
 (load! "modules/editing/prog")
 (load! "modules/editing/python")
+(load! "modules/editing/ai")
 
 (load! "modules/projects/projectile")
 (load! "modules/projects/magit-auth")
