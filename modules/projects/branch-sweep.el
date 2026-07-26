@@ -1,4 +1,6 @@
 ;;; modules/projects/branch-sweep.el -*- lexical-binding: t; -*-
 
-(add-to-list 'load-path "/home/docktordreh/Projects/active/magit-link-sync")
-(require 'branch-sweep)
+(let ((directory (expand-file-name "Projects/active/magit-link-sync" (getenv "HOME"))))
+  (when (file-directory-p directory)
+    (add-to-list 'load-path directory)
+    (require 'branch-sweep nil t)))

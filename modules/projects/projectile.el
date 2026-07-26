@@ -13,6 +13,6 @@
       projectile-switch-project-action #'projectile-dired
       projectile-dynamic-mode-line nil
       projectile-require-project-root t
-      projectile-auto-discover t)
+       projectile-auto-discover t)
 
-
+(add-hook 'projectile-after-switch-project-hook #'treemacs)

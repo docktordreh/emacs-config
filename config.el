@@ -30,6 +30,7 @@
 (load! "modules/commands/org-return-dwim")
 (load! "modules/commands/latex-helpers")
 (load! "modules/commands/org-roam-tools")
+(load! "modules/commands/project-new")
 
 (load! "modules/system/tty-exwm")
 (load! "modules/system/gpg")
