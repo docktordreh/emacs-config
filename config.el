@@ -4,9 +4,6 @@
 (load! "modules/10-user")
 (load! "modules/20-env")
 
-(after! dired
-  (add-hook 'dired-mode-hook #'dired-hide-details-mode))
-
 (load! "modules/ui/theme")
 (load! "modules/ui/fonts")
 (load! "modules/ui/line-numbers")
@@ -18,6 +15,7 @@
 (load! "modules/editing/ai")
 
 (load! "modules/projects/projectile")
+(load! "modules/projects/dired")
 (load! "modules/projects/magit-auth")
 (load! "modules/projects/branch-sweep")
 (load! "modules/projects/az-pr-sync")
