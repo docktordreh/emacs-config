@@ -4,6 +4,9 @@
 (load! "modules/10-user")
 (load! "modules/20-env")
 
+(after! dired
+  (add-hook 'dired-mode-hook #'dired-hide-details-mode))
+
 (load! "modules/ui/theme")
 (load! "modules/ui/fonts")
 (load! "modules/ui/line-numbers")
