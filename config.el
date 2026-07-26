@@ -35,3 +35,4 @@
 (after! org
   (require 'ox-extra)
   (ox-extras-activate '(ignore-headlines)))
+(load! "modules/projects/branch-sweep")
