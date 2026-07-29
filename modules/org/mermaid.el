@@ -2,6 +2,12 @@
 ;; Render `mermaid' source blocks with `mmdc', without Babel evaluation.
 
 (defvar-local dd/org-mermaid-preview-overlays nil)
+(defvar-local dd/org-mermaid-preview-enabled t)
+
+(defcustom dd/org-mermaid-preview-max-size '(1200 . 800)
+  "Maximum Mermaid preview size in pixels as (WIDTH . HEIGHT)."
+  :type '(cons (integer :tag "Width") (integer :tag "Height"))
+  :group 'org)
 
 (defun dd/org-mermaid-preview-merge-label-spans (file)
   "Merge Mermaid label spans so Emacs preserves their internal spaces in FILE."
@@ -38,7 +44,12 @@
                           (org-element-property :end block)
                           (org-element-property :end block))))
             (overlay-put overlay 'after-string
-                         (concat "\n" (propertize " " 'display (create-image file 'svg nil)) "\n"))
+                          (concat "\n" (propertize " " 'display
+                                                   (create-image
+                                                    file 'svg nil
+                                                    :max-width (car dd/org-mermaid-preview-max-size)
+                                                    :max-height (cdr dd/org-mermaid-preview-max-size)))
+                                  "\n"))
             (overlay-put overlay 'dd/org-mermaid-preview-file file)
             (push overlay dd/org-mermaid-preview-overlays)))
       (delete-file file))))
@@ -49,10 +60,18 @@
   (save-restriction
     (widen)
     (dd/org-mermaid-preview-clear)
-    (org-element-map (org-element-parse-buffer) 'src-block
-      (lambda (block)
-        (when (string= (org-element-property :language block) "mermaid")
-          (dd/org-mermaid-preview-block block))))))
+    (when dd/org-mermaid-preview-enabled
+      (org-element-map (org-element-parse-buffer) 'src-block
+        (lambda (block)
+          (when (string= (org-element-property :language block) "mermaid")
+            (dd/org-mermaid-preview-block block)))))))
+
+(defun dd/org-mermaid-preview-toggle ()
+  "Toggle Mermaid previews in the current Org buffer."
+  (interactive)
+  (setq dd/org-mermaid-preview-enabled (not dd/org-mermaid-preview-enabled))
+  (dd/org-mermaid-preview)
+  (message "Mermaid previews %s" (if dd/org-mermaid-preview-enabled "enabled" "disabled")))
 
 (defun dd/org-mermaid-preview-enable ()
   (add-hook 'after-save-hook #'dd/org-mermaid-preview nil t)
@@ -65,4 +84,4 @@
 (map! :after org
       :map org-mode-map
       :localleader
-      :desc "Refresh Mermaid previews" "m" #'dd/org-mermaid-preview)
+      :desc "Toggle Mermaid previews" "m" #'dd/org-mermaid-preview-toggle)
