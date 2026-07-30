@@ -15,4 +15,7 @@
       projectile-require-project-root t
        projectile-auto-discover t)
 
-(add-hook 'projectile-after-switch-project-hook #'treemacs)
+(add-hook 'projectile-after-switch-project-hook
+          (lambda ()
+            (save-selected-window
+              (treemacs))))
