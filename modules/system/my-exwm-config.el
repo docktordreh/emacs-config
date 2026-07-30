@@ -68,6 +68,8 @@
                         (exwm-workspace-switch-create ,i))))
                   (number-sequence 0 9))))
 (require 'exwm-systemtray)
+(setq exwm-systemtray-height 36
+      exwm-systemtray-icon-gap 6)
 (exwm-systemtray-mode 1)
 (setq exwm-input-line-mode-passthrough t)
 
@@ -212,4 +214,5 @@
 
 (evil-define-key '(insert replace) exwm-mode-map
   (kbd "<escape>") #'my-exwm-double-escape)
+(add-hook 'exwm-init-hook #'my-exwm-start-session-programs 90)
 (exwm-wm-mode)
