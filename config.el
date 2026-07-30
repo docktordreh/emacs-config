@@ -19,6 +19,7 @@
 (load! "modules/projects/magit-auth")
 (load! "modules/projects/branch-sweep")
 (load! "modules/projects/az-pr-sync")
+(load! "modules/projects/receiver")
 (load! "modules/projects/treemacs-ignores")
 
 (load! "modules/org/core")
