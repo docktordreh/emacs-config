@@ -23,8 +23,12 @@
                 'face `(:foreground ,(doom-color 'magenta))))
          (msg  (nth (random (length my/dashboard-footer-messages))
                     my/dashboard-footer-messages))
-         (line (concat icon msg)))
-    (+dashboard-insert line)))
+         (line (concat icon msg))
+         (prefix (propertize
+                  " "
+                  'display `(space :align-to
+                                    (- center ,(/ (float (+dashboard-strlen line)) 2))))))
+    (insert prefix line "\n")))
 
 (add-hook! '+dashboard-functions :append
   (my/dashboard--insert-footer)
