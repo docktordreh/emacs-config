@@ -14,9 +14,9 @@
                     font-lock-keyword-face))
       (face-remap-add-relative face :background 'unspecified))))
 
-(remove-hook! '+doom-dashboard-functions
-  #'doom-dashboard-widget-shortmenu
-  #'doom-dashboard-widget-footer)
+(remove-hook! '+dashboard-functions
+  #'+dashboard-widget-shortmenu
+  #'+dashboard-widget-footer)
 
 (defun my/dashboard--insert-footer ()
   "Insert a centered random footer line."
@@ -26,9 +26,9 @@
          (msg  (nth (random (length my/dashboard-footer-messages))
                     my/dashboard-footer-messages))
          (line (concat icon msg)))
-    (insert "\n" (+doom-dashboard--center +doom-dashboard--width line) "\n")))
+    (+dashboard-insert line)))
 
-(add-hook! '+doom-dashboard-functions :append
+(add-hook! '+dashboard-functions :append
   (my/dashboard--insert-footer)
   (setq mode-line-format nil))
 
@@ -62,6 +62,5 @@
                "\n"))
      'face 'doom-dashboard-banner)))
 
-(setq +doom-dashboard-ascii-banner-fn #'my/dashboard-banner-weebery
+(setq +dashboard-ascii-banner-fn (lambda () " ")
       fancy-splash-image (file-name-concat doom-private-dir "images/logo.svg"))
-
