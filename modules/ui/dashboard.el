@@ -14,10 +14,7 @@
                     font-lock-keyword-face))
       (face-remap-add-relative face :background 'unspecified))))
 
-(remove-hook! '+dashboard-functions
-  #'+dashboard-widget-shortmenu
-  #'+dashboard-widget-footer
-  #'+dashboard-widget-loaded)
+(setq +dashboard-functions '(+dashboard-widget-banner))
 
 (defun my/dashboard--insert-footer ()
   "Insert a centered random footer line."
