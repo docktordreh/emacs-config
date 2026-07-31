@@ -16,7 +16,8 @@
 
 (remove-hook! '+dashboard-functions
   #'+dashboard-widget-shortmenu
-  #'+dashboard-widget-footer)
+  #'+dashboard-widget-footer
+  #'+dashboard-widget-loaded)
 
 (defun my/dashboard--insert-footer ()
   "Insert a centered random footer line."
@@ -63,4 +64,5 @@
      'face 'doom-dashboard-banner)))
 
 (setq +dashboard-ascii-banner-fn (lambda () " ")
+      +dashboard-anchor '(top . center)
       fancy-splash-image (file-name-concat doom-private-dir "images/logo.svg"))
