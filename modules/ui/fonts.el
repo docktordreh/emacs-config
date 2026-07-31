@@ -9,3 +9,7 @@
       doom-unicode-font (font-spec :family "JuliaMono"))
 
 
+(after! emojify
+  (add-hook 'doom-first-buffer-hook
+            (lambda () (global-emojify-mode -1))
+            t))
