@@ -10,6 +10,19 @@
 (load! "modules/ui/nyan-mode")
 (load! "modules/ui/dashboard")
 
+(use-package! solaire-mode
+  :config
+  (solaire-global-mode +1))
+
+(use-package! golden-ratio
+  :config
+  (golden-ratio-mode +1))
+
+(use-package! vertico-posframe
+  :after vertico
+  :config
+  (vertico-posframe-mode +1))
+
 (load! "modules/editing/prog")
 (load! "modules/editing/python")
 (load! "modules/editing/ai")
