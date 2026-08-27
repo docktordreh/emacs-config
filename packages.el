@@ -84,3 +84,7 @@
 (package! citar)
 (package! citar-org-roam)
 (package! org-super-agenda)
+(package! solaire-mode)
+(package! golden-ratio)
+(package! vertico-posframe)
+(package! devdocs)
