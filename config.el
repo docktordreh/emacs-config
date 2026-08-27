@@ -7,25 +7,11 @@
 (load! "modules/ui/theme")
 (load! "modules/ui/fonts")
 (load! "modules/ui/line-numbers")
+(load! "modules/ui/solaire-mode")
+(load! "modules/ui/golden-ratio")
+(load! "modules/ui/vertico-posframe")
 (load! "modules/ui/nyan-mode")
 (load! "modules/ui/dashboard")
-
-(use-package! solaire-mode
-  :config
-  (solaire-global-mode +1))
-
-(use-package! golden-ratio
-  :config
-  (dolist (command '(evil-window-left evil-window-right
-                     evil-window-up evil-window-down))
-    (add-to-list 'golden-ratio-extra-commands command))
-  (golden-ratio-mode +1))
-
-(use-package! vertico-posframe
-  :after vertico
-  :config
-  (setq vertico-posframe-font "IosevkaCustom-18")
-  (vertico-posframe-mode +1))
 
 (load! "modules/editing/prog")
 (load! "modules/editing/python")
