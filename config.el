@@ -24,8 +24,7 @@
 (use-package! vertico-posframe
   :after vertico
   :config
-  (setq vertico-posframe-font
-        (font-spec :family "IosevkaCustom" :size 18))
+  (setq vertico-posframe-font "IosevkaCustom-18")
   (vertico-posframe-mode +1))
 
 (load! "modules/editing/prog")
