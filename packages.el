@@ -76,7 +76,7 @@
 (unpin! indent-bars)
 (package! hcl-mode :recipe (:host github :repo "docktordreh/hcl-mode"))
 (package! indent-bars :recipe (:host github :repo "docktordreh/indent-bars"))
-(package! doom-haze-chips-theme :recipe (:host github :repo "docktordreh/doom-haze-chips-theme"))
+(package! haze-chips-theme :recipe (:host github :repo "docktordreh/haze-chips-theme.el"))
 
 ;; org mode
 (package! org-roam-ui)
