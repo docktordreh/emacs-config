@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: front matter
+# key: fm
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+---
+title: $1
+description: $2
+---
+
+$0

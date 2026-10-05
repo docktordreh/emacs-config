@@ -88,3 +88,7 @@
 (package! golden-ratio)
 (package! vertico-posframe)
 (package! devdocs)
+
+;; docs-as-code (modules/docs/)
+(package! lsp-ltex-plus :recipe (:host github :repo "emacs-languagetool/lsp-ltex-plus"))
+(package! mermaid-mode)

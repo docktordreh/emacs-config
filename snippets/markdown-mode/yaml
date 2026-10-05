@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: YAML example
+# key: yaml
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`yaml
+$1
+\`\`\`
+$0

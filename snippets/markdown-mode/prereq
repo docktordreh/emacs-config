@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: prerequisites section
+# key: prereq
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+## Prerequisites
+
+- ${1:requirement}
+- $0

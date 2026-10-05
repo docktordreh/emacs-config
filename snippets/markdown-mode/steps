@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: step-by-step procedure
+# key: steps
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+## ${1:Procedure}
+
+1. ${2:First step.}
+2. $0

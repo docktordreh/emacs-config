@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# name: command with expected output
+# key: cmdout
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`bash
+${1:command}
+\`\`\`
+
+The output is similar to:
+
+\`\`\`text
+${2:output}
+\`\`\`
+$0

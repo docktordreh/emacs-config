@@ -33,6 +33,15 @@
 (load! "modules/org/latex")
 (load! "modules/org/mermaid")
 
+;; Docs-as-code: Markdown + Marksman/LTeX+/Vale + Astro (see modules/docs/README.org)
+(load! "modules/docs/writing-mode")
+(load! "modules/docs/markdown")
+(load! "modules/docs/lsp")
+(load! "modules/docs/vale")
+(load! "modules/docs/snippets")
+(load! "modules/docs/mermaid")
+(load! "modules/docs/astro")
+
 (load! "modules/commands/org-return-dwim")
 (load! "modules/commands/latex-helpers")
 (load! "modules/commands/org-roam-tools")

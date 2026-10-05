@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: bash example
+# key: bash
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`bash
+${1:command}
+\`\`\`
+$0

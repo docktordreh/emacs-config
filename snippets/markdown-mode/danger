@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: danger callout
+# key: danger
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+`(dd/docs-admonition-open "danger")`$0`(dd/docs-admonition-close)`

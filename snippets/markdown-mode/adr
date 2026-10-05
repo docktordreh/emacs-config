@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# name: architecture decision section
+# key: adr
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+## ${1:Decision}
+
+**Status:** ${2:Proposed}
+
+### Context
+
+$3
+
+### Decision
+
+$4
+
+### Consequences
+
+$0

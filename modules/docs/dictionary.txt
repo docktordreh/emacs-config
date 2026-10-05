@@ -1,0 +1,45 @@
+# Words LTeX+ accepts in every project (one per line, # starts a comment).
+# Project-specific terms belong in <repo>/.ltex/dictionary.txt or the
+# repository's Vale vocabulary (accept.txt), which LTeX+ also reads.
+Ansible
+Astro
+autoscaler
+autoscaling
+backend
+Cilium
+CLI
+config
+ConfigMap
+containerd
+CRD
+DaemonSet
+DevOps
+Dockerfile
+dotenv
+Grafana
+Helm
+HCL
+IaC
+Istio
+JSON
+kubeconfig
+kubectl
+Kubernetes
+kustomize
+Markdown
+Mermaid
+namespace
+namespaces
+npm
+OpenTofu
+pnpm
+Prometheus
+README
+runtime
+sidecar
+StatefulSet
+Terraform
+tfvars
+TOML
+URL
+YAML

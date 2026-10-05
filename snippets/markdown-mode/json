@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: JSON example
+# key: json
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`json
+{
+  $1
+}
+\`\`\`
+$0

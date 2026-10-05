@@ -1,0 +1,117 @@
+#+title: Docs-as-code writing environment
+
+Markdown documentation tooling layered on Doom's =(markdown +lsp)=. Every
+external tool is optional; a missing one disables only its feature.
+
+* Who checks what
+
+| Tool     | Responsibility                                   | Runs in                                   |
+|----------+--------------------------------------------------+-------------------------------------------|
+| Marksman | links, headings, references, completion, symbols | every Markdown buffer (LSP)               |
+| Vale     | style and terminology from the repo's =.vale.ini= | =dd/technical-writing-mode= (Flycheck =vale=) |
+| LTeX+    | grammar and spelling                             | =dd/technical-writing-mode= (LSP add-on)  |
+
+- No separate spell checker: LTeX+ already spells, and =:checkers spell= stays off.
+- While LTeX+ is attached, the editor's Vale run filters out =Vale.Spelling= so
+  misspellings are not reported twice.  CI's Vale run is unaffected.
+- LTeX+ accepts words from three lists: =modules/docs/dictionary.txt= (user),
+  =<repo>/.ltex/dictionary.txt= (project, =SPC D d= appends) and the repo's
+  Vale vocabulary (=<StylesPath>/config/vocabularies/<Vocab>/accept.txt=).
+  The LTeX+ code action "Add to dictionary" (=SPC c a=) stores user-level words.
+- Code blocks, inline code and front matter are skipped by both Vale and LTeX+.
+- Flycheck's error list (=SPC c x=, =SPC D e=) shows the checker: =vale= vs. =lsp=
+  (LTeX+ rule IDs such as =MORFOLOGIK_RULE_EN_US=).  LTeX+ reports as =info=;
+  Vale uses the levels from the repo's rules.
+
+* Documentation projects
+
+A Markdown file belongs to a documentation project when a parent directory
+contains =.vale.ini= (or another Vale config name), =.marksman.toml= or
+=astro.config.*= (=dd/docs-project-markers=).  There,
+=dd/technical-writing-mode= turns on automatically; elsewhere (a README in a
+code repo) only Marksman runs.
+
+Per-repository settings, all optional:
+
+| File                        | Effect                                                        |
+|-----------------------------+---------------------------------------------------------------|
+| =.vale.ini=, =.vale/styles/= | Vale rules; without it Vale does not run                      |
+| =.ltex/dictionary.txt=      | project words for LTeX+                                       |
+| =.marksman.toml=            | Marksman options (wiki-link style, TOC action, ...)           |
+| =.snippets/markdown-mode/=  | extra yasnippets, loaded when a docs buffer opens             |
+| =.dir-locals.el=            | e.g. ~((markdown-mode . ((dd/docs-admonition-style . github))))~ |
+
+Callout snippets (=note=, =info=, =warn=, =danger=) default to Starlight's
+=:::note= syntax; =dd/docs-admonition-style= =github= writes ~> [!NOTE]~, and
+=dd/docs-admonition-types= renames types per project.  Other snippets:
+=fence=, =bash=, =tf=, =yaml=, =json=, =mermaid=, =cmdout=, =adr=, =prereq=,
+=steps=, =trouble=, =fm=.
+
+* Keys
+
+| Key            | Command                                            |
+|----------------+----------------------------------------------------|
+| =SPC D I=      | install marksman, ltex-ls-plus, vale (and optionally mmdc) into =~/.local= |
+| =SPC D i=      | create missing =.vale.ini= (built-in Vale style), vocabulary and =.marksman.toml= |
+| =SPC D w=      | toggle technical-writing mode (also =SPC m w=)     |
+| =SPC D g=      | toggle LTeX+ grammar checks everywhere             |
+| =SPC D v= / =V= | Vale on this file / whole project (=*vale*=)       |
+| =SPC D d=      | accept word in project dictionary                  |
+| =SPC D e=      | Flycheck error list                                |
+| =SPC D c=      | centered text column                               |
+| =SPC D f= / =s= | find file / ripgrep in the docs root               |
+| =SPC D o=      | headings (=consult-outline=)                       |
+| =SPC D t=      | TODO/FIXME/XXX/TBD list                            |
+| =SPC D n=      | word count (region or buffer)                      |
+| =SPC D m=      | render Mermaid block at point (also =SPC m m=)     |
+| =SPC D p=      | open this page in the browser, starting Astro      |
+| =SPC D a d/k/r= | Astro dev server start / stop / restart            |
+| =SPC D a o/b/s= | open preview / build / run package.json script     |
+| =SPC m y=      | edit front matter in =yaml-mode=                   |
+| =SPC m T ...=  | table: align, rows, columns, sort, transpose       |
+| =SPC m '=      | edit code block (Mermaid fences open in =mermaid-mode=) |
+
+Doom's markdown keys remain: =]h= / =[h= headings, =TAB= folding, =SPC m i= insert.
+Projectile also knows the =astro= project type: =SPC p c= builds, =SPC p R=
+starts the dev server.  Astro commands use the lockfile's package manager
+(pnpm, yarn, bun, npm) and map =src/content/docs/= and =src/pages/= files to
+routes (=dd/astro-content-dirs=, =slug:= front matter wins).
+
+* External tools
+
+=SPC D I= (=dd/docs-install-tools=) installs all of them into =~/.local= without
+root and skips tools already on PATH; the same script runs from a terminal:
+=sh modules/docs/install-tools.sh [--mermaid]=.  Manual installs go into a
+directory on Doom's PATH snapshot (=~/.local/bin= is), or run =doom env= afterwards.
+
+| Tool         | Needed for      | Install                                                                      |
+|--------------+-----------------+------------------------------------------------------------------------------|
+| marksman     | Marksman        | release binary =marksman-linux-x64= → =~/.local/bin/marksman=, or =M-x lsp-install-server= |
+| ltex-ls-plus | grammar/spelling | release =ltex-ls-plus-<v>-linux-x64.tar.gz= → =~/.local/opt/=, symlink =bin/ltex-ls-plus= into =~/.local/bin= |
+| vale         | style checks    | upstream release ≥ 3.15 (Void's 3.13 lacks =--path= and then only checks saved files) |
+| mmdc         | Mermaid preview | =npm i -g @mermaid-js/mermaid-cli=                                            |
+
+The ltex-ls-plus tarball bundles Java 21; Emacs points =JAVA_HOME= at it for
+that process, so an older system Java does not matter.
+
+* Deliberately not enabled
+
+- =writegood-mode=: Vale's =write-good= package and LTeX+'s picky rules
+  (=lsp-ltex-plus-additional-rules-enable-picky-rules=) cover the same checks
+  with per-repo control.  To get them, add =write-good= to the repo's
+  =.vale.ini= =Packages= or to your user-level Vale config.
+- =:checkers spell= / =grammar=: duplicate LTeX+.
+- polymode for Mermaid: native fence fontification plus =SPC m '= covers it
+  without the fragility.
+- Rendered Markdown previews (grip, markup hiding): Astro is the preview.
+- =markdown-ts-mode=: markdown-mode has the table/list editing.
+
+* Caveats
+
+- lsp-mode asks once per repository to import the project root.
+- Marksman completes links as repository-root paths
+  (=/src/content/docs/...=); whether =.md= links resolve on the site depends on
+  the project's remark setup.
+- Astro 7 detaches =astro dev= when it detects an AI agent environment
+  (=AGENT=, =OPENCODE=, ... variables).  An Emacs started from such a terminal
+  then cannot stop the server; use =astro dev stop=.

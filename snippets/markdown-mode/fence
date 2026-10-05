@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: fenced code block
+# key: fence
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`${1:lang}
+$0
+\`\`\`

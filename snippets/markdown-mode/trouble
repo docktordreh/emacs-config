@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: troubleshooting section
+# key: trouble
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+## Troubleshooting
+
+### ${1:Symptom}
+
+**Cause:** $2
+
+**Resolution:** $0

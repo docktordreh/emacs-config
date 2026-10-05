@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: info callout
+# key: info
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+`(dd/docs-admonition-open "info")`$0`(dd/docs-admonition-close)`

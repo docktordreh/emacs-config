@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Mermaid diagram
+# key: mermaid
+# expand-env: ((yas-indent-line (quote fixed)))
+# --
+\`\`\`mermaid
+flowchart ${1:LR}
+  ${2:a}[${3:Client}] --> ${4:b}[${5:Service}]
+\`\`\`
+$0
