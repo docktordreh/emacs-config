@@ -4,6 +4,10 @@
 ;; To install a package with Doom you must declare them here and run 'doom sync'
 ;; on the command line, then restart Emacs for the changes to take effect -- or
 ;; use 'M-x doom/reload'.
+
+;; Emacs 31 defines `treesit-ready-p' in `treesit.el' without an autoload.
+(require 'treesit nil t)
+
 (package! anki-editor)
 (package! nyan-mode)
 
