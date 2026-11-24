@@ -253,6 +253,13 @@
     (setq dd/mdx-preview--line nil))
   (font-lock-flush))
 
+(defun dd/mdx-preview-enable-h ()
+  (when (derived-mode-p 'dd/mdx-mode)
+    (dd/mdx-preview-mode 1)))
+
+;; Run after Doom enables indent guides, so preview can suspend them.
+(add-hook 'after-change-major-mode-hook #'dd/mdx-preview-enable-h 96)
+
 (map! :map dd/mdx-mode-map
       :localleader
       :desc "Toggle in-place preview" "V" #'dd/mdx-preview-mode)

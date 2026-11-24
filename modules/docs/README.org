@@ -142,7 +142,8 @@ buffer so the buffer-local language applies.
 
 * In-place MDX preview
 
-Use =SPC m V= or =M-x dd/mdx-preview-mode= in an MDX buffer. Away from the
+Preview is on by default in MDX buffers. Toggle it with =SPC m V= or
+=M-x dd/mdx-preview-mode=. Away from the
 current line, headings and emphasis hide their markers, links show their
 labels, and frontmatter fences display as =»= and =«=. Move onto a line to
 reveal its source. Haze Chips shades frontmatter and import/export blocks
