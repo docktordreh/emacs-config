@@ -34,6 +34,143 @@
 
 (advice-add 'markdown-syntax-propertize-pre-blocks :before-until #'dd/mdx--skip-pre-blocks-a)
 
+;;; Site links
+
+;; In Astro/Starlight content, links starting with / are site routes
+;; ("/platform/x/" -> <content dir>/platform/x.mdx), not filesystem paths.
+;; markdown-mode would open /platform/x/ from the filesystem root, and the
+;; MDX language server resolves and completes them against the repository
+;; root.  Relative links (images) resolve against the file, as markdown-mode
+;; already does.
+
+(defcustom dd/docs-content-dirs '("src/content/docs/" "docs/")
+  "Directories, relative to a project root, that the site serves at /."
+  :type '(repeat string)
+  :group 'dd/docs)
+
+(defun dd/docs-content-root (&optional file)
+  "Return the content directory serving the site that FILE belongs to."
+  (when-let* ((file (or file buffer-file-name)))
+    (cl-loop for dir in dd/docs-content-dirs
+             for root = (locate-dominating-file file dir)
+             for content = (and root (expand-file-name dir root))
+             when (and content (file-in-directory-p file content))
+             return content)))
+
+(defun dd/docs--route-path (route)
+  "Return ROUTE without anchor, query and surrounding slashes."
+  (string-trim (url-unhex-string (car (split-string route "[#?]"))) "/" "/"))
+
+(defun dd/docs--path-file (path root)
+  "Return the page or file for the slash-less route PATH under ROOT."
+  (or (cl-loop for base in (if (string-empty-p path) '("index") (list path (concat path "/index")))
+               thereis (cl-loop for ext in '(".mdx" ".md")
+                                for file = (expand-file-name (concat base ext) root)
+                                thereis (and (file-regular-p file) file)))
+      (let ((file (expand-file-name path root)))
+        (and (not (string-empty-p path)) (file-regular-p file) file))
+      ;; Pages whose front matter sets `slug:'.
+      (when-let* ((rg (executable-find "rg")))
+        (car (ignore-errors
+               (process-lines rg "-l" "--glob" "*.{md,mdx}"
+                              (format "^slug:[ \t]*[\"']?/?%s/?[\"']?[ \t]*$" (regexp-quote path))
+                              root))))))
+
+(defun dd/docs-route-file (route root)
+  "Return the file under content dir ROOT that serves the site ROUTE.
+Routes are lowercase, and a locale route without a translation
+(\"/de/x/\") serves the default-locale page (\"/x/\"), as in Starlight."
+  (let* ((path (dd/docs--route-path route))
+         (paths (delete-dups (list path (downcase path)))))
+    (or (cl-loop for p in paths thereis (dd/docs--path-file p root))
+        (cl-loop for p in paths
+                 when (string-match "\\`[a-z][a-z]\\(?:-[a-z]+\\)?/" p)
+                 thereis (and (file-directory-p (expand-file-name (match-string 0 p) root))
+                              (dd/docs--path-file (substring p (match-end 0)) root))))))
+
+(defun dd/docs--heading-slug (heading)
+  "Return the anchor Starlight generates for HEADING (github-slugger)."
+  (replace-regexp-in-string
+   " " "-" (replace-regexp-in-string "[^[:alnum:] _-]" "" (downcase (string-trim heading)))))
+
+(defun dd/docs--goto-anchor (route)
+  "Move to the heading that ROUTE's #anchor names, if any."
+  (when-let* ((anchor (cadr (split-string route "#"))))
+    (let ((pos (save-excursion
+                 (goto-char (point-min))
+                 (cl-loop while (re-search-forward "^[ \t]*#+[ \t]+\\(.+?\\)[ \t#]*$" nil t)
+                          when (equal (dd/docs--heading-slug (match-string-no-properties 1)) anchor)
+                          return (line-beginning-position)))))
+      (if pos (goto-char pos) (message "No heading for #%s" anchor)))))
+
+(defun dd/docs-follow-route (url)
+  "Open the page for the site route URL in a docs project.
+Return nil for other links, so markdown-mode handles them."
+  (when-let* (((string-prefix-p "/" url))
+              ((not (string-prefix-p "//" url)))
+              (root (dd/docs-content-root)))
+    (let ((file (or (dd/docs-route-file url root)
+                    (user-error "No page for %s in %s" url (abbreviate-file-name root)))))
+      (find-file file)
+      (dd/docs--goto-anchor url)
+      t)))
+
+(add-hook 'markdown-follow-link-functions #'dd/docs-follow-route)
+
+(defun dd/docs--href-at-point ()
+  "Return the root-relative href=\"/...\" value at point, if any."
+  (let ((pos (point)))
+    (save-excursion
+      (goto-char (line-beginning-position))
+      (cl-loop while (re-search-forward "href={?[\"']\\(/[^\"']*\\)" (line-end-position) t)
+               when (<= (match-beginning 0) pos (match-end 0))
+               return (match-string-no-properties 1)))))
+
+(defun dd/docs-follow-link-at-point ()
+  "Follow the link at point; site routes in href=\"/...\" too."
+  (interactive)
+  (if-let* ((href (dd/docs--href-at-point)))
+      (dd/docs-follow-route href)
+    (markdown-follow-thing-at-point nil)))
+
+(set-lookup-handlers! 'dd/mdx-mode :file '(dd/docs-follow-link-at-point :async t))
+
+(defvar dd/docs--routes-cache (make-hash-table :test #'equal)
+  "Content dir -> (TIME . ROUTES).")
+
+(defun dd/docs--routes (root)
+  "Return the site routes of the pages under content dir ROOT (cached 60 s)."
+  (let ((cached (gethash root dd/docs--routes-cache)))
+    (if (and cached (< (float-time (time-since (car cached))) 60))
+        (cdr cached)
+      (let ((routes (cl-loop for file in (directory-files-recursively root "\\.mdx?\\'")
+                             for route = (replace-regexp-in-string
+                                          "\\(?:\\`\\|/\\)index\\'" ""
+                                          (file-name-sans-extension (file-relative-name file root)))
+                             collect (if (string-empty-p route) "/" (concat "/" route "/")))))
+        (puthash root (cons (current-time) routes) dd/docs--routes-cache)
+        routes))))
+
+(defun dd/docs-route-capf ()
+  "Complete site routes after \"](/\" and \"href=\\\"/\" in docs projects."
+  (when-let* ((root (dd/docs-content-root))
+              ((looking-back "\\(?:](\\|href={?[\"']\\)\\(/[^] \t\n)\"']*\\)" (line-beginning-position))))
+    (list (match-beginning 1) (point) (dd/docs--routes root) :exclusive 'no)))
+
+(defun dd/docs-route-capf-h ()
+  "Put `dd/docs-route-capf' first in Markdown buffers.
+lsp-mode pushes `lsp-completion-at-point' to the front with `add-to-list',
+which ignores hook depth, so this runs again when LSP completion starts."
+  (when (derived-mode-p 'markdown-mode)
+    (remove-hook 'completion-at-point-functions #'dd/docs-route-capf t)
+    (add-hook 'completion-at-point-functions #'dd/docs-route-capf -50 t)))
+
+(add-hook 'markdown-mode-hook #'dd/docs-route-capf-h)
+(add-hook 'lsp-completion-mode-hook #'dd/docs-route-capf-h)
+
+;; The MDX server's document links point into the repository root.
+(setq-hook! 'dd/mdx-mode-hook lsp-enable-links nil)
+
 ;; Apheleia's default for Markdown modes is Prettier, which only knows MDX 1
 ;; and joins lists nested in components.  `astro-ts-mode' derives from
 ;; `html-ts-mode' and would get `prettier-html'.  Neither mode has a default

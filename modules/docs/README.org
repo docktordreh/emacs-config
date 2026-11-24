@@ -140,6 +140,24 @@ buffer so the buffer-local language applies.
 - Rendered Markdown previews (grip, markup hiding): Astro is the preview.
 - =markdown-ts-mode=: markdown-mode has the table/list editing.
 
+* Site links
+
+Links starting with =/= are site routes, served from the content directory
+(=dd/docs-content-dirs=: =src/content/docs/= or =docs/=), not filesystem or
+repository paths: =/platform/x/= is =<content>/platform/x.mdx= or
+=.../x/index.mdx=.
+
+- =gf= / =RET= on a Markdown link or an =href="/..."= attribute opens that page
+  (=dd/docs-follow-route=), including pages with a front-matter =slug:=,
+  lowercase routes and untranslated locale routes (=/de/x/= falls back to
+  =/x/= like Starlight), and jumps to a =#anchor= heading.
+- After =](/= or =href="/=, completion offers the site routes
+  (=dd/docs-route-capf=) ahead of the language server, which would complete
+  repository paths.
+- The MDX server's clickable document links are off (=lsp-enable-links=): they
+  point into the repository root.
+- Relative links (images) resolve against the file, as in Astro.
+
 * Caveats
 
 - lsp-mode asks once per repository to import the project root.
