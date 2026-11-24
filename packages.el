@@ -94,5 +94,7 @@
 (package! devdocs)
 
 ;; docs-as-code (modules/docs/)
+(package! astro-ts-mode)
+(package! vale-mode)
 (package! lsp-ltex-plus :recipe (:host github :repo "emacs-languagetool/lsp-ltex-plus"))
 (package! mermaid-mode)

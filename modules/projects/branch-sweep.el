@@ -3,7 +3,7 @@
 (require 'subr-x)
 
 (defconst dd/branch-sweep-directory
-  (expand-file-name "Projects/active/magit-link-sync" (getenv "HOME")))
+  (expand-file-name "Projects/github-personal/active/magit-link-sync" (getenv "HOME")))
 
 (defconst dd/branch-sweep-repository
   "git@github.com:docktordreh/branch-sweep.git")

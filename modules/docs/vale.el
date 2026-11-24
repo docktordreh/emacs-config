@@ -2,6 +2,9 @@
 ;; Vale owns documentation style and terminology.  Rules come from the
 ;; repository's own .vale.ini; nothing runs without one.
 
+(use-package! vale-mode
+  :mode ("\\.vaf\\'" . vale-mode))
+
 (defcustom dd/docs-vale-config-files '(".vale.ini" "_vale.ini" "vale.ini" ".vale" "_vale")
   "Vale configuration file names, in Vale's own lookup order."
   :type '(repeat string)
@@ -50,10 +53,24 @@ buffer from stdin via --path; older versions lint the saved file."
          (list (concat "--path=" file))
        (list file)))))
 
+(defun dd/docs-vale--fix (line span action suggestions)
+  "Build a Flycheck fix from a Vale replacement ACTION."
+  (when (and (equal action "replace")
+             (consp suggestions))
+    (flycheck-fix-new
+     :description (format "Replace with '%s'" (car suggestions))
+     :edits (list
+             (flycheck-fix-edit-new
+              :line line
+              :column (car span)
+              :end-line line
+              :end-column (1+ (cadr span))
+              :replacement (car suggestions))))))
+
 (defun dd/docs-vale--parse (output checker buffer)
   "Parse Vale's JSON OUTPUT into Flycheck errors for CHECKER in BUFFER."
   (let ((report (ignore-errors
-                  (json-parse-string output :object-type 'alist :array-type 'list))))
+                   (json-parse-string output :object-type 'alist :array-type 'list))))
     (cl-loop
      for (_file . alerts) in report
      when (consp alerts)                ; skip Vale's own error object
@@ -66,7 +83,8 @@ buffer from stdin via --path; older versions lint the saved file."
                   .Message
                   :id .Check :checker checker :buffer buffer
                   :filename (buffer-file-name buffer)
-                  :end-line .Line :end-column (1+ (cadr .Span)))))
+                  :end-line .Line :end-column (1+ (cadr .Span))
+                  :fix (dd/docs-vale--fix .Line .Span .Action.Name .Suggestions))))
              alerts))))
 
 (after! flycheck
@@ -76,7 +94,7 @@ buffer from stdin via --path; older versions lint the saved file."
     :standard-input t
     :working-directory (lambda (_checker) (dd/docs-vale-config-dir))
     :error-parser dd/docs-vale--parse
-    :modes (markdown-mode gfm-mode)
+    :modes (markdown-mode gfm-mode astro-ts-mode)
     :predicate (lambda ()
                  (and (bound-and-true-p dd/technical-writing-mode)
                       buffer-file-name

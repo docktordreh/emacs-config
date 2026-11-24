@@ -12,9 +12,7 @@
   :group 'dd/docs)
 
 (defcustom dd/docs-project-markers
-  '(".vale.ini" "_vale.ini" "vale.ini" ".marksman.toml"
-    "astro.config.mjs" "astro.config.ts" "astro.config.mts"
-    "astro.config.js" "astro.config.cjs")
+  '(".vale.ini" "_vale.ini" "vale.ini" ".marksman.toml")
   "Files whose presence in a parent directory marks a documentation project."
   :type '(repeat string)
   :group 'dd/docs)
@@ -66,6 +64,7 @@ soft-wraps text buffers with `visual-line-mode'."
     (dd/technical-writing-mode +1)))
 
 (add-hook 'markdown-mode-hook #'dd/docs-maybe-enable-h)
+(add-hook 'astro-ts-mode-hook #'dd/docs-maybe-enable-h)
 
 (defun dd/docs-toggle-centered ()
   "Toggle a centered text column of `dd/docs-centered-width' characters."

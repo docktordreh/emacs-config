@@ -10,6 +10,12 @@ external tool is optional; a missing one disables only its feature.
 | Marksman | links, headings, references, completion, symbols | every Markdown buffer (LSP)               |
 | Vale     | style and terminology from the repo's =.vale.ini= | =dd/technical-writing-mode= (Flycheck =vale=) |
 | LTeX+    | grammar and spelling                             | =dd/technical-writing-mode= (LSP add-on)  |
+| mdx-analyzer | MDX/JSX diagnostics, hover, completion       | every =.mdx= buffer (LSP)                 |
+| remark   | formatting on save                               | =.md=/=.mdx= in repos with a =.remarkrc*= |
+
+- MDX opens in =astro-ts-mode=.  It has no default formatter (Apheleia would
+  pick =prettier-html=, which collapses prose); outside remark repos the
+  language server formats, if it can.
 
 - No separate spell checker: LTeX+ already spells, and =:checkers spell= stays off.
 - While LTeX+ is attached, the editor's Vale run filters out =Vale.Spelling= so
@@ -89,6 +95,7 @@ directory on Doom's PATH snapshot (=~/.local/bin= is), or run =doom env= afterwa
 | marksman     | Marksman        | release binary =marksman-linux-x64= → =~/.local/bin/marksman=, or =M-x lsp-install-server= |
 | ltex-ls-plus | grammar/spelling | release =ltex-ls-plus-<v>-linux-x64.tar.gz= → =~/.local/opt/=, symlink =bin/ltex-ls-plus= into =~/.local/bin= |
 | vale         | style checks    | upstream release ≥ 3.15 (Void's 3.13 lacks =--path= and then only checks saved files) |
+| mdx-language-server | MDX LSP  | =M-x lsp-install-server mdx-analyzer=, then =npm -g --prefix <lsp-server-install-dir>/npm/@mdx-js/language-server install typescript@5= |
 | mmdc         | Mermaid preview | =npm i -g @mermaid-js/mermaid-cli=                                            |
 
 The ltex-ls-plus tarball bundles Java 21; Emacs points =JAVA_HOME= at it for

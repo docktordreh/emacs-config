@@ -2,8 +2,11 @@
 ;; Markdown language servers via Doom's lsp-mode (`(markdown +lsp)' in init.el):
 ;;   Marksman -> links, headings, references, workspace awareness (always)
 ;;   LTeX+    -> grammar and spelling (only in `dd/technical-writing-mode')
+;; MDX (`astro-ts-mode', see markdown.el):
+;;   mdx-analyzer -> MDX/JSX diagnostics, hover, completion (always)
+;;   LTeX+        -> as above
 
-(setq-hook! 'markdown-mode-hook
+(setq-hook! '(markdown-mode-hook astro-ts-mode-hook)
   ;; Stay quiet when a server is missing instead of prompting on every file.
   lsp-enable-suggest-server-download nil
   lsp-warn-no-matched-clients nil
@@ -30,8 +33,14 @@
   :type 'string
   :group 'dd/docs)
 
+(defcustom dd/docs-ltex-languages '(("/docs/de/" . "de-DE"))
+  "LTeX+ languages by file path: (REGEXP . LANGUAGE).
+Files matching no REGEXP use `lsp-ltex-plus-language'."
+  :type '(alist :key-type regexp :value-type string)
+  :group 'dd/docs)
+
 ;; Must be set before lsp-ltex-plus loads; it registers its client from these.
-(setq lsp-ltex-plus-active-modes '(markdown-mode gfm-mode)
+(setq lsp-ltex-plus-active-modes '(markdown-mode gfm-mode astro-ts-mode)
       lsp-ltex-plus-user-rules-path (file-name-concat doom-data-dir "lsp-ltex-plus/")
       ;; Typography rules that misfire on Markdown source (straight quotes,
       ;; "--" and "->" are deliberate there).
@@ -102,9 +111,37 @@ older system JAVA_HOME (Java < 21) would otherwise break it."
         #'dd/docs--ltex-environment)
   (lsp-register-custom-settings '(("ltex.dictionary" dd/docs-ltex-dictionary))))
 
+(defun dd/docs-ltex-language-h ()
+  "Set `lsp-ltex-plus-language' from `dd/docs-ltex-languages'."
+  (when-let* ((file buffer-file-name)
+              (entry (seq-find (lambda (entry) (string-match-p (car entry) file))
+                               dd/docs-ltex-languages)))
+    (setq-local lsp-ltex-plus-language (cdr entry))))
+
+(add-hook 'markdown-mode-hook #'dd/docs-ltex-language-h)
+(add-hook 'astro-ts-mode-hook #'dd/docs-ltex-language-h)
+
+(defun dd/docs--configuration-in-scope-buffer-a (fn params)
+  "Answer workspace/configuration in the buffer of the requested scopeUri.
+lsp-mode ignores scopeUri, so buffer-local settings such as
+`lsp-ltex-plus-language' would not reach LTeX+, which asks per document."
+  (if-let* ((uri (seq-some #'lsp:configuration-item-scope-uri?
+                           (lsp:configuration-params-items params)))
+            (buffer (find-buffer-visiting (lsp--uri-to-path uri))))
+      (with-current-buffer buffer (funcall fn params))
+    (funcall fn params)))
+
+(after! lsp-mode
+  (advice-add 'lsp--build-workspace-configuration-response
+              :around #'dd/docs--configuration-in-scope-buffer-a))
+
 (defun dd/docs--ltex-wanted-p ()
-  "Return non-nil if LTeX+ should check the current buffer."
-  (and dd/docs-grammar-enabled (bound-and-true-p dd/technical-writing-mode)))
+  "Return non-nil if LTeX+ should check the current buffer.
+In `astro-ts-mode' only MDX: LTeX+ has no parser for .astro files."
+  (and dd/docs-grammar-enabled
+       (bound-and-true-p dd/technical-writing-mode)
+       (or (derived-mode-p 'markdown-mode)
+           (string-suffix-p ".mdx" (or buffer-file-name "")))))
 
 (defun dd/docs--ltex-attached-p ()
   "Return non-nil if an LTeX+ server manages the current buffer."
@@ -126,7 +163,35 @@ older system JAVA_HOME (Java < 21) would otherwise break it."
 
 ;; Depth 90: after `dd/docs-maybe-enable-h', before lsp! (local-vars hook).
 (add-hook 'markdown-mode-hook #'dd/docs-ltex-sync-h 90)
+(add-hook 'astro-ts-mode-hook #'dd/docs-ltex-sync-h 90)
 (add-hook 'dd/technical-writing-mode-hook #'dd/docs-ltex-sync-h)
+
+;;; MDX and Astro
+
+;; Doom's :lang web has no Astro support, so nothing else starts lsp-mode here:
+;; astro-ls for .astro, mdx-analyzer (and LTeX+) for .mdx.
+(add-hook 'astro-ts-mode-local-vars-hook #'lsp! 'append)
+
+;; mdx-analyzer asks to watch **/*.mdx.  Docs repos exceed
+;; `lsp-file-watch-threshold', so lsp-mode prompts on every start and the
+;; server answers nothing until the prompt is answered.  Without the client
+;; capability the server does not ask; open buffers still sync via didChange.
+(setq-hook! 'astro-ts-mode-hook lsp-enable-file-watchers nil)
+
+(defun dd/docs--mdx-initialization-options ()
+  "Point the MDX language server at the TypeScript installed next to it.
+The server refuses to start without typescript.tsdk, and lsp-mdx sends none.
+Install it with: npm -g --prefix <lsp-server-install-dir>/npm/@mdx-js/language-server
+install typescript@5 (TypeScript 7 has no typescript.js for the server)."
+  (list :typescript
+        (list :tsdk (expand-file-name "npm/@mdx-js/language-server/lib/node_modules/typescript/lib"
+                                      lsp-server-install-dir))))
+
+(after! lsp-mdx
+  ;; Plain `aset' for the same reason as for LTeX+ above.
+  (aset (gethash 'mdx-analyzer lsp-clients)
+        (cl-struct-slot-offset 'lsp--client 'initialization-options)
+        #'dd/docs--mdx-initialization-options))
 
 (defun dd/docs-toggle-grammar ()
   "Toggle LTeX+ grammar and spelling checks in all technical-writing buffers."
@@ -134,7 +199,7 @@ older system JAVA_HOME (Java < 21) would otherwise break it."
   (setq dd/docs-grammar-enabled (not dd/docs-grammar-enabled))
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
-      (when (derived-mode-p 'markdown-mode)
+      (when (derived-mode-p 'markdown-mode 'astro-ts-mode)
         (dd/docs-ltex-sync-h))))
   (message "LTeX+ grammar checking %s" (if dd/docs-grammar-enabled "enabled" "disabled")))
 

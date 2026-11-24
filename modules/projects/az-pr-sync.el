@@ -3,7 +3,7 @@
 (require 'subr-x)
 
 (defconst dd/az-pr-sync-directory
-  (expand-file-name "Projects/active/az-pr-sync" (getenv "HOME")))
+  (expand-file-name "Projects/github-personal/active/az-pr-sync" (getenv "HOME")))
 
 (defconst dd/az-pr-sync-repository
   "git@github.com:docktordreh/az-pr-sync.git")

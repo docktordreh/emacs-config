@@ -4,8 +4,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(ansible-vault biblio copilot mermaid-docker-mode mermaid-mode ob-mermaid
-     protobuf-mode scad-mode vterm))
+   '(ansible-vault astro-ts-mode biblio copilot kubernetes mermaid-docker-mode
+     mermaid-mode ob-mermaid powershell protobuf-mode scad-mode vale-mode vterm))
  '(safe-local-variable-values '((eval sh-set-shell "zsh"))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.

@@ -4,6 +4,10 @@
 (setenv "PATH" (concat (getenv "PATH") ":/opt/kotlin-lsp/server/bin"))
 (setenv "PATH" (concat (getenv "PATH") ":/home/valentin/.config/local/share/cargo/bin"))
 (setenv "PATH" (concat (getenv "PATH") ":/home/valentin/.pyenv/bin"))
+
+;; Keep GnuPG on the keyring location configured by the dotfiles.
+(setenv "GNUPGHOME" (expand-file-name "~/.local/share/gnupg"))
+
 (add-to-list 'exec-path "/opt/texlive/2025/bin/x86_64-linux/")
 
 (defun my-active-ssh-agent-socket ()
@@ -24,6 +28,3 @@
 
 (when-let ((socket (my-active-ssh-agent-socket)))
   (setenv "SSH_AUTH_SOCK" socket))
-
-;; Use an available agent; report an unavailable identity in the echo area.
-(setenv "GIT_SSH_COMMAND" (or (getenv "GIT_SSH_COMMAND") "ssh -o BatchMode=yes"))
