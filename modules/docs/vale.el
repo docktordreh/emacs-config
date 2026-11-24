@@ -94,7 +94,7 @@ buffer from stdin via --path; older versions lint the saved file."
     :standard-input t
     :working-directory (lambda (_checker) (dd/docs-vale-config-dir))
     :error-parser dd/docs-vale--parse
-    :modes (markdown-mode gfm-mode astro-ts-mode)
+    :modes (markdown-mode gfm-mode dd/mdx-mode astro-ts-mode)
     :predicate (lambda ()
                  (and (bound-and-true-p dd/technical-writing-mode)
                       buffer-file-name

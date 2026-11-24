@@ -17,3 +17,6 @@ setup.sh
 
 !.github
 !.projectile
+
+# npm dependencies of modules/docs/ltex-mdx
+node_modules/

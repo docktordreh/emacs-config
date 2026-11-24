@@ -13,9 +13,12 @@ external tool is optional; a missing one disables only its feature.
 | mdx-analyzer | MDX/JSX diagnostics, hover, completion       | every =.mdx= buffer (LSP)                 |
 | remark   | formatting on save                               | =.md=/=.mdx= in repos with a =.remarkrc*= |
 
-- MDX opens in =astro-ts-mode=.  It has no default formatter (Apheleia would
-  pick =prettier-html=, which collapses prose); outside remark repos the
-  language server formats, if it can.
+- MDX opens in =dd/mdx-mode= (=gfm-mode= plus ESM and ={/* comments */}=
+  highlighting; component tags look like inline HTML; no indented code
+  blocks).  It has no default formatter (Apheleia would pick Prettier, which
+  only knows MDX 1); outside remark repos the language server formats, if it can.
+- Heading colors and sizes come from the theme (=haze-chips=); keep
+  =markdown-header-scaling= off, or markdown-mode overrides the heights.
 
 - No separate spell checker: LTeX+ already spells, and =:checkers spell= stays off.
 - While LTeX+ is attached, the editor's Vale run filters out =Vale.Spelling= so
@@ -100,6 +103,30 @@ directory on Doom's PATH snapshot (=~/.local/bin= is), or run =doom env= afterwa
 
 The ltex-ls-plus tarball bundles Java 21; Emacs points =JAVA_HOME= at it for
 that process, so an older system Java does not matter.
+
+On aarch64 it lacks the native hunspell library that LanguageTool needs for
+German spelling (=de-DE= fails with "Could not create hunspell instance").
+Copy =libhunspell-1.7.so.0.*= from Void's =libhunspell1.7= package to
+=~/.local/opt/ltex-ls-plus-<v>/etc/linux-aarch64/libhunspell.so= (that =etc/=
+is on its classpath); repeat after reinstalling ltex-ls-plus.
+
+LTeX+ reads MDX as CommonMark: import lines and ={expressions}= look like
+prose, component children like raw HTML.  =ltex-mdx/proxy.mjs= sits between
+lsp-mode and ltex-ls-plus, parses MDX with remark-mdx and passes LTeX+ only the
+Markdown prose (same lines; columns mapped back).  It also drops spelling
+errors of non-English spell checkers on words that are correct English
+(=nspell= + =dictionary-en=): German pages name English UI labels and
+buttons.  Install its dependencies with =npm ci= in =modules/docs/ltex-mdx=;
+without them LTeX+ runs directly.
+
+The Vale vocabularies' =accept.txt= entries are regexps; LTeX+ gets the
+literal words they match (=dd/docs--vale-term-expansions=), plus the single
+words of multi-word terms.
+
+German pages (=dd/docs-ltex-languages=, default =/docs/de/=) are checked as
+=de-DE=.  lsp-mode ignores the per-document scope of configuration requests;
+=dd/docs--configuration-in-scope-buffer-a= answers them from that document's
+buffer so the buffer-local language applies.
 
 * Deliberately not enabled
 

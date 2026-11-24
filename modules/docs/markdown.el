@@ -1,9 +1,9 @@
 ;;; modules/docs/markdown.el -*- lexical-binding: t; -*-
 ;; Markdown editing on top of Doom's :lang markdown.  Markup stays visible:
-;; no header scaling, markup hiding or URL hiding.
+;; no markup hiding or URL hiding.  Heading colors and sizes come from the
+;; theme (haze-chips), so `markdown-header-scaling' stays off.
 
 (after! markdown-mode
-  (add-to-list 'auto-mode-alist '("\\.mdx\\'" . astro-ts-mode))
   (setq markdown-asymmetric-header t                      ; "# Title", not "# Title #"
         markdown-indent-on-enter 'indent-and-new-item     ; RET continues lists
         markdown-list-indent-width 2)                     ; Prettier-compatible nesting
@@ -12,11 +12,35 @@
                   ("yml" . yaml-mode)))
     (add-to-list 'markdown-code-lang-modes lang)))
 
-;; `astro-ts-mode' derives from `html-ts-mode', which makes Apheleia select
-;; `prettier-html'. Prettier then collapses prose newlines in MDX pages.  So
-;; the mode has no default formatter; buffers choose one themselves: remark
-;; (below) or their language server (`(format +lsp)').
+;;; MDX
+
+;; MDX is Markdown plus ESM, {expressions} and JSX.  `gfm-mode' fontifies the
+;; Markdown and, via `markdown-enable-html', component tags as inline HTML.
+(define-derived-mode dd/mdx-mode gfm-mode "MDX"
+  "Major mode for MDX documents: GitHub Flavored Markdown with ESM and JSX.")
+
+(add-to-list 'auto-mode-alist '("\\.mdx\\'" . dd/mdx-mode))
+
+(font-lock-add-keywords
+ 'dd/mdx-mode
+ '(("^\\(?:import\\|export\\)\\_>.*$" 0 'font-lock-preprocessor-face t)
+   ("{/\\*.*?\\*/}" 0 'font-lock-comment-face t)))
+
+;; MDX has no indented code blocks, but formatters indent component children,
+;; which markdown-mode would show as code.
+(defun dd/mdx--skip-pre-blocks-a (&rest _)
+  "Return non-nil in MDX buffers, so indented text is not code."
+  (derived-mode-p 'dd/mdx-mode))
+
+(advice-add 'markdown-syntax-propertize-pre-blocks :before-until #'dd/mdx--skip-pre-blocks-a)
+
+;; Apheleia's default for Markdown modes is Prettier, which only knows MDX 1
+;; and joins lists nested in components.  `astro-ts-mode' derives from
+;; `html-ts-mode' and would get `prettier-html'.  Neither mode has a default
+;; formatter; buffers choose one themselves: remark (below) or their language
+;; server (`(format +lsp)').
 (after! apheleia
+  (add-to-list 'apheleia-mode-alist '(dd/mdx-mode))
   (add-to-list 'apheleia-mode-alist '(astro-ts-mode))
   (setf (alist-get 'remark apheleia-formatters)
         '("apheleia-npx" "remark" "--quiet" "--frail" "--file-path" filepath)))
@@ -32,7 +56,6 @@ Runs before lsp-mode connects, so `+format-with-lsp-mode' keeps remark."
     (setq-local +format-with 'remark)))
 
 (add-hook 'markdown-mode-hook #'dd/docs-use-remark-h)
-(add-hook 'astro-ts-mode-hook #'dd/docs-use-remark-h)
 
 ;; `global-org-pretty-table-mode' (modules/org/ux.el) would draw Markdown table
 ;; pipes as box characters; keep tables as typed.
@@ -81,8 +104,8 @@ Runs before lsp-mode connects, so `+format-with-lsp-mode' keeps remark."
 (defun dd/astro-open-translation ()
   "Open or create the English or German counterpart of the current document."
   (interactive)
-  (unless (derived-mode-p 'astro-ts-mode)
-    (user-error "Current buffer is not an Astro document"))
+  (unless (derived-mode-p 'markdown-mode 'astro-ts-mode)
+    (user-error "Current buffer is not a Markdown, MDX or Astro document"))
   (unless buffer-file-name
     (user-error "Current buffer has no file"))
   (let* ((project-root (locate-dominating-file
@@ -116,6 +139,8 @@ Runs before lsp-mode connects, so `+format-with-lsp-mode' keeps remark."
       :localleader
       :desc "Edit front matter"        "y" #'dd/docs-edit-frontmatter
       :desc "Technical-writing mode"   "w" #'dd/technical-writing-mode
+      ;; "t" is Doom's toggle prefix here.
+      :desc "Open translation"         "L" #'dd/astro-open-translation
       (:prefix ("T" . "table")
        :desc "Align"                   "a" #'markdown-table-align
        :desc "Insert row"              "r" #'markdown-table-insert-row

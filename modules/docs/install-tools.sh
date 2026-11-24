@@ -51,6 +51,14 @@ else
     | tar xz -C "$BIN" vale
 fi
 
+# Dependencies of the LTeX+ MDX proxy (ltex-mdx/), pinned by its package-lock.json.
+if command -v npm >/dev/null; then
+  echo "ltex-mdx: installing proxy dependencies with npm ci"
+  # In the directory: `npm ci --prefix` from elsewhere reports the lock file
+  # as out of sync ("Missing: ltex-mdx@ from lock file").
+  (cd "$(dirname "$0")/ltex-mdx" && npm ci --no-fund --no-audit)
+fi
+
 if [ "${1:-}" = --mermaid ]; then
   if command -v mmdc >/dev/null; then
     echo "mmdc: already installed ($(command -v mmdc))"

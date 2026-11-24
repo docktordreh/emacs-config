@@ -1,0 +1,15 @@
+{
+  "name": "ltex-mdx",
+  "private": true,
+  "description": "LSP proxy for ltex-ls-plus: MDX documents reach LTeX+ as their Markdown prose only",
+  "type": "module",
+  "dependencies": {
+    "dictionary-en": "^4.0.0",
+    "nspell": "^2.1.5",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
+  }
+}
