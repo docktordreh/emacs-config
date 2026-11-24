@@ -1,0 +1,23 @@
+{
+  "service": "invoice-worker",
+  "queue": {
+    "name": "invoices",
+    "consumers": [
+      {
+        "region": "eu-central",
+        "concurrency": 4,
+        "retry": {
+          "maxAttempts": 5,
+          "backoffSeconds": [2, 5, 15]
+        }
+      }
+    ]
+  },
+  "telemetry": {
+    "logLevel": "info",
+    "metrics": {
+      "enabled": true,
+      "intervalSeconds": 30
+    }
+  }
+}

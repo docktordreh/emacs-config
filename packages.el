@@ -10,6 +10,9 @@
 
 (package! anki-editor)
 (package! nyan-mode)
+(package! rainbow-backgrounds
+  :recipe (:type nil :local-repo "pkg/rainbow-backgrounds"
+           :files ("rainbow-backgrounds.el")))
 
 ;; To install SOME-PACKAGE from MELPA, ELPA or emacsmirror:
 ;; (package! some-package)

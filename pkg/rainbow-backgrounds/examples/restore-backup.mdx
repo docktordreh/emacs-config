@@ -1,0 +1,24 @@
+---
+title: Restore a database backup
+description: Recover a database into a separate instance.
+---
+
+import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+## Pick a restore method
+
+<Tabs>
+  <TabItem label="Console">
+    <Steps>
+      1. Open **Backups** and select a snapshot.
+      2. Choose **Restore to a new instance**.
+
+         <Aside type="caution">
+           Use a new name to keep the original database intact.
+         </Aside>
+    </Steps>
+  </TabItem>
+  <TabItem label="CLI">
+    Run `db backup restore` with the snapshot ID.
+  </TabItem>
+</Tabs>

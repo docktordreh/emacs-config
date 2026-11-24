@@ -1,0 +1,87 @@
+#+title: Rainbow Backgrounds
+
+=rainbow-backgrounds-mode= uses tinted backgrounds to show where nested
+elements and collections begin and end. Inner blocks cover their parents
+from their own indentation to the right edge, including on blank lines.
+Inline elements only tint their own span. The mode leaves the source text
+and syntax foregrounds intact. Syntax backgrounds, such as Haze Chips'
+yellow strings, are blended with the innermost block tint. Adjust the mix
+with =rainbow-backgrounds-syntax-weight=.
+
+* Use in Doom
+
+This is a local package declared in =packages.el=. Run =doom sync= and
+restart Emacs after installing the config. The mode starts automatically
+in HTML, XML, JSON, YAML, Markdown, and MDX. Use =SPC t R= or
+=M-x global-rainbow-backgrounds-mode= to toggle it globally, or
+=M-x rainbow-backgrounds-mode= for just the current buffer.
+
+When blocks are shaded, =rainbow-delimiters-mode= is suspended in that
+buffer so delimiter text stays legible. It is restored when shading stops
+if it was previously enabled. Buffers without shaded blocks are unaffected.
+
+| Format   | What gets a background                                      |
+|----------+-------------------------------------------------------------|
+| MDX      | JSX by nesting depth; frontmatter and imports separately    |
+| Markdown | Embedded HTML only, not prose or HTML examples in code     |
+| HTML/XML | Nested elements                                            |
+| JSON     | Objects and arrays                                         |
+| YAML     | Mappings and sequences, including inline flow collections  |
+
+HTML, JSON, and YAML need the matching Emacs Tree-sitter grammars. XML uses
+Emacs's XML tokenizer. The Markdown and MDX adapter reuses the docs setup's
+remark parser; install its dependencies with =SPC D I=. Markdown needs the
+HTML grammar as well. In MDX, =SPC m V= still controls in-place markup
+preview separately.
+
+* Screenshots
+
+These are captures from Doom Emacs with Haze Chips and the actual major modes
+used for each file.
+
+** MDX: database backup restore instructions
+
+[[file:examples/restore-backup.mdx][Source: restore-backup.mdx]]
+
+#+attr_org: :width 950
+[[file:screenshots/restore-backup.png]]
+
+** JSON: invoice worker configuration
+
+[[file:examples/worker-config.json][Source: worker-config.json]]
+
+#+attr_org: :width 950
+[[file:screenshots/worker-config.png]]
+
+** YAML: Kubernetes deployment
+
+[[file:examples/deployment.yaml][Source: deployment.yaml]]
+
+#+attr_org: :width 950
+[[file:screenshots/deployment.png]]
+
+** HTML: incident status page
+
+[[file:examples/service-status.html][Source: service-status.html]]
+
+#+attr_org: :width 950
+[[file:screenshots/service-status.png]]
+
+** XML: warehouse inventory catalog
+
+[[file:examples/catalog.xml][Source: catalog.xml]]
+
+#+attr_org: :width 950
+[[file:screenshots/catalog.png]]
+
+* Add a language
+
+Set =rainbow-backgrounds-provider= buffer-locally to a function that accepts
+a callback. Call it with a list of =(BEG END DEPTH &optional SHAPE FACE)=
+ranges, using Emacs buffer positions and zero-based nesting depth. =inline=
+shades exactly the span, =full= starts at column zero, and the default starts
+at the opening column. The callback may run asynchronously; omit it if
+parsing fails and the previous shading should remain.
+
+Set =rainbow-backgrounds-palette= to a vector of background-only faces.
+This Doom config uses the five muted Haze Chips colors for all languages.

@@ -16,11 +16,17 @@ import remarkGfm from "remark-gfm";
 const parser = unified()
   .use(remarkParse)
   .use(remarkFrontmatter, ["yaml", "toml"])
-  .use(remarkGfm)
-  .use(remarkMdx);
+  .use(remarkGfm);
+
+export function parseMdx(text) {
+  return mdxParser.parse(text);
+}
+
+const mdxParser = parser().use(remarkMdx);
+export const parseMarkdown = (text) => parser.parse(text);
 
 export function mask(text) {
-  const tree = parser.parse(text);
+  const tree = parseMdx(text);
   const chars = text.split(""); // UTF-16 code units, like LSP columns
   const indent = []; // per line: indentation added by enclosing components
 

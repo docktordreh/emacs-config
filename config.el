@@ -38,6 +38,25 @@
 (load! "modules/org/mermaid")
 
 ;; Docs-as-code: Markdown/MDX + Marksman/LTeX+/Vale (see modules/docs/README.org)
+(require 'rainbow-backgrounds)
+(setq rainbow-backgrounds-palette
+      [dd/mdx-preview-depth-1-face dd/mdx-preview-depth-2-face
+       dd/mdx-preview-depth-3-face dd/mdx-preview-depth-4-face
+       dd/mdx-preview-depth-5-face])
+(add-hook 'html-mode-hook #'rainbow-backgrounds-enable-html)
+(add-hook 'html-ts-mode-hook #'rainbow-backgrounds-enable-html)
+(add-hook 'nxml-mode-hook #'rainbow-backgrounds-enable-xml)
+(add-hook 'json-mode-hook #'rainbow-backgrounds-enable-json)
+(add-hook 'json-ts-mode-hook #'rainbow-backgrounds-enable-json)
+(add-hook 'yaml-mode-hook #'rainbow-backgrounds-enable-yaml)
+(add-hook 'yaml-ts-mode-hook #'rainbow-backgrounds-enable-yaml)
+(add-hook 'web-mode-hook
+          (lambda ()
+            (when (and buffer-file-name
+                       (string-match-p "\\.html?\\'" buffer-file-name))
+              (rainbow-backgrounds-enable-html))))
+(global-rainbow-backgrounds-mode 1)
+(map! :leader :desc "Rainbow backgrounds" "t R" #'global-rainbow-backgrounds-mode)
 (load! "modules/docs/writing-mode")
 (load! "modules/docs/markdown")
 (load! "modules/docs/lsp")

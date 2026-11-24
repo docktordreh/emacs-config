@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="urn:example:inventory">
+  <warehouse id="berlin">
+    <section name="networking">
+      <product sku="SW-24">
+        <name>Managed switch</name>
+        <stock unit="pieces">18</stock>
+        <supplier>
+          <name>Northline Distribution</name>
+          <leadTime unit="days">3</leadTime>
+        </supplier>
+      </product>
+    </section>
+    <section name="storage">
+      <product sku="SSD-2T">
+        <name>2 TB enterprise SSD</name>
+        <stock unit="pieces">42</stock>
+      </product>
+    </section>
+  </warehouse>
+</catalog>

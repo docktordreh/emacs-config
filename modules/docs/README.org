@@ -137,8 +137,36 @@ buffer so the buffer-local language applies.
 - =:checkers spell= / =grammar=: duplicate LTeX+.
 - polymode for Mermaid: native fence fontification plus =SPC m '= covers it
   without the fragility.
-- Rendered Markdown previews (grip, markup hiding): Astro is the preview.
+- Browser previews via Grip: use Astro for the rendered site.
 - =markdown-ts-mode=: markdown-mode has the table/list editing.
+
+* In-place MDX preview
+
+Use =SPC m V= or =M-x dd/mdx-preview-mode= in an MDX buffer. Away from the
+current line, headings and emphasis hide their markers, links show their
+labels, and frontmatter fences display as =»= and =«=. Move onto a line to
+reveal its source. Haze Chips shades frontmatter and import/export blocks
+across the buffer. JSX blocks are shaded from their opening indentation to
+the right edge. Backgrounds cycle through muted rainbow-delimiters colors by
+nesting depth; inner blocks override outer blocks. Inline JSX
+shades only its own span. Indent guides are off while preview is active.
+Block shading uses the same MDX parser as the LTeX+ proxy (install it with
+=SPC D I=). The file stays unchanged. Use Astro to preview how the
+components actually render.
+
+* Rainbow backgrounds
+
+=rainbow-backgrounds-mode= is independent of markup hiding. It starts
+automatically in HTML, XML, JSON, YAML, Markdown, and MDX buffers. In plain Markdown, it
+shades only embedded HTML, not Markdown headings, lists, blockquotes, or
+code examples. HTML and embedded HTML use the HTML Tree-sitter grammar;
+XML uses Emacs's XML tokenizer. Markdown and MDX also use the parser
+installed by =SPC D I=.
+
+Toggle shading in a buffer with =M-x rainbow-backgrounds-mode=. To add
+another language, set the buffer-local =rainbow-backgrounds-provider= to a
+function that supplies ranges; rendering and the depth palette are shared.
+See the [[file:../../pkg/rainbow-backgrounds/README.org][package README]] for examples and screenshots.
 
 * Site links
 

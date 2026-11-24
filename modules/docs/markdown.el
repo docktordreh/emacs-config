@@ -1,7 +1,6 @@
 ;;; modules/docs/markdown.el -*- lexical-binding: t; -*-
-;; Markdown editing on top of Doom's :lang markdown.  Markup stays visible:
-;; no markup hiding or URL hiding.  Heading colors and sizes come from the
-;; theme (haze-chips), so `markdown-header-scaling' stays off.
+;; Markdown editing on top of Doom's :lang markdown.  Heading colors and
+;; sizes come from the theme, so `markdown-header-scaling' stays off.
 
 (after! markdown-mode
   (setq markdown-asymmetric-header t                      ; "# Title", not "# Title #"
@@ -33,6 +32,230 @@
   (derived-mode-p 'dd/mdx-mode))
 
 (advice-add 'markdown-syntax-propertize-pre-blocks :before-until #'dd/mdx--skip-pre-blocks-a)
+
+;;; In-place preview
+
+(defface dd/mdx-preview-frontmatter-face '((t nil))
+  "Background face for the YAML frontmatter in MDX preview."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-frontmatter-delimiter-face '((t nil))
+  "Face for the YAML frontmatter boundary markers in MDX preview."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-source-face '((t nil))
+  "Background face for imports and fallback face for JSX components."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-depth-1-face '((t :inherit dd/mdx-preview-source-face))
+  "Background face for the first JSX nesting color."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-depth-2-face '((t :inherit dd/mdx-preview-source-face))
+  "Background face for the second JSX nesting color."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-depth-3-face '((t :inherit dd/mdx-preview-source-face))
+  "Background face for the third JSX nesting color."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-depth-4-face '((t :inherit dd/mdx-preview-source-face))
+  "Background face for the fourth JSX nesting color."
+  :group 'markdown-faces)
+
+(defface dd/mdx-preview-depth-5-face '((t :inherit dd/mdx-preview-source-face))
+  "Background face for the fifth JSX nesting color."
+  :group 'markdown-faces)
+
+(defconst dd/mdx-preview--depth-faces
+  [dd/mdx-preview-depth-1-face dd/mdx-preview-depth-2-face
+   dd/mdx-preview-depth-3-face dd/mdx-preview-depth-4-face
+   dd/mdx-preview-depth-5-face])
+
+(defconst dd/mdx-preview--parser
+  (expand-file-name "ltex-mdx/preview.mjs" (file-name-directory load-file-name)))
+
+(defvar-local dd/mdx-preview--process nil)
+(defvar-local dd/mdx-preview--restore-indent-bars nil)
+
+(defvar-local dd/mdx-preview--line nil
+  "Marker at the beginning of the line whose source markup is visible.")
+
+(defun dd/mdx-preview--heading (limit)
+  "Find an ATX heading before LIMIT whose markup should be hidden."
+  (catch 'match
+    (while (markdown-match-propertized-text 'markdown-heading limit)
+      (when (and (match-beginning 4)
+                 (not (= (match-beginning 0) dd/mdx-preview--line)))
+        (throw 'match t)))))
+
+(defun dd/mdx-preview--hide-heading ()
+  "Hide the matched heading's hash markers without changing its face."
+  (dolist (group '(4 6))
+    (when (match-beginning group)
+      (put-text-property (match-beginning group) (match-end group) 'display "")))
+  nil)
+
+(defun dd/mdx-preview--active-line-p (position)
+  "Return non-nil if POSITION is on the line showing source."
+  (save-excursion
+    (goto-char position)
+    (= (line-beginning-position) dd/mdx-preview--line)))
+
+(defun dd/mdx-preview--frontmatter-marker (icon)
+  "Display ICON in place of the matched YAML fence off the current line."
+  (unless (dd/mdx-preview--active-line-p (match-beginning 0))
+    (put-text-property (match-beginning 0) (match-end 0) 'display icon))
+  'dd/mdx-preview-frontmatter-delimiter-face)
+
+(defun dd/mdx-preview--inline-markup (limit)
+  "Match Markdown delimiters already identified by font-lock before LIMIT."
+  (catch 'match
+    (while (< (point) limit)
+      (let* ((beg (point))
+             (end (min (line-beginning-position 2)
+                       (next-single-property-change beg 'invisible nil limit))))
+        (goto-char end)
+        (when (and (eq (get-text-property beg 'invisible) 'markdown-markup)
+                   (not (dd/mdx-preview--active-line-p beg))
+                   (not (markdown-code-block-at-point-p beg)))
+          (set-match-data (list beg end))
+          (throw 'match t))))))
+
+(defconst dd/mdx-preview--keywords
+  '((dd/mdx-preview--heading (4 (dd/mdx-preview--hide-heading)))
+    (markdown-match-yaml-metadata-begin (0 (dd/mdx-preview--frontmatter-marker "»") prepend))
+    (markdown-match-yaml-metadata-end (0 (dd/mdx-preview--frontmatter-marker "«") prepend))
+    ((lambda (limit) (markdown-match-propertized-text 'markdown-yaml-metadata-section limit))
+     (0 'dd/mdx-preview-frontmatter-face append))
+    (dd/mdx-preview--inline-markup
+     (0 (progn (put-text-property (match-beginning 0) (match-end 0) 'display "") nil)))))
+
+(defun dd/docs--background-ranges (ranges)
+  "Convert parser line and column RANGES to rainbow-backgrounds ranges."
+  (save-excursion
+    (save-restriction
+      (widen)
+      (let ((lines (save-excursion
+                     (goto-char (point-min))
+                     (vconcat (cons (point) (cl-loop while (search-forward "\n" nil t)
+                                                      collect (point)))))))
+        (mapcar
+         (pcase-lambda (`(,kind ,start ,column ,end ,end-column ,depth))
+           (list (+ (aref lines (1- start)) column)
+                 (+ (aref lines (1- end)) end-column)
+                 depth
+                 (pcase kind ("inline" 'inline) ((or "yaml" "esm") 'full))
+                 (pcase kind ("yaml" 'dd/mdx-preview-frontmatter-face)
+                             ("esm" 'dd/mdx-preview-source-face))))
+         ranges)))))
+
+(defun dd/docs--embedded-html-ranges (ranges)
+  "Parse the raw HTML RANGES together, excluding Markdown text and code."
+  (let* ((source (buffer-substring-no-properties (point-min) (point-max)))
+         (html (replace-regexp-in-string "[^\n]" " " source))
+         elements)
+    (pcase-dolist (`(,beg ,end . ,_) ranges)
+      (store-substring html (1- beg) (substring source (1- beg) (1- end))))
+    (when ranges
+      (with-temp-buffer
+        (insert html)
+        (rainbow-backgrounds-html (lambda (parsed) (setq elements parsed)))))
+    ;; Decide whether elements are inline from the original Markdown text.
+    (mapcar (pcase-lambda (`(,beg ,end ,depth . ,_))
+              (rainbow-backgrounds-element beg end depth))
+            elements)))
+
+(defun dd/docs-markdown-backgrounds (emit)
+  "Parse the current Markdown or MDX buffer and pass its ranges to EMIT."
+  (when (and (executable-find "node")
+             (file-directory-p (expand-file-name "node_modules"
+                                                 (file-name-directory dd/mdx-preview--parser))))
+    (let* ((buffer (current-buffer))
+           (mdx (derived-mode-p 'dd/mdx-mode))
+           (tick (buffer-chars-modified-tick))
+           (output (generate-new-buffer " *Markdown backgrounds*")))
+      (when (process-live-p dd/mdx-preview--process)
+        (delete-process dd/mdx-preview--process))
+      (setq dd/mdx-preview--process
+            (make-process
+             :name "markdown-backgrounds" :buffer output :noquery t :connection-type 'pipe
+             :coding 'utf-8-unix
+             :command (append (list "node" dd/mdx-preview--parser)
+                              (unless mdx '("--markdown")))
+             :sentinel
+             (lambda (process _event)
+               (when (memq (process-status process) '(exit signal))
+                 (unwind-protect
+                     (when (and (zerop (process-exit-status process))
+                                (buffer-live-p buffer))
+                       (let ((ranges (with-current-buffer output
+                                       (goto-char (point-min))
+                                       (json-parse-buffer :array-type 'list))))
+                         (with-current-buffer buffer
+                           (when (= tick (buffer-chars-modified-tick))
+                             (save-restriction
+                               (widen)
+                               (let ((regions (dd/docs--background-ranges ranges)))
+                                 (funcall emit (if mdx regions
+                                                 (dd/docs--embedded-html-ranges regions)))))))))
+                   (kill-buffer output))))))
+      (process-send-region dd/mdx-preview--process (point-min) (point-max))
+      (process-send-eof dd/mdx-preview--process))))
+
+(defun dd/docs-enable-rainbow-backgrounds-h ()
+  (setq-local rainbow-backgrounds-provider #'dd/docs-markdown-backgrounds))
+
+(add-hook 'markdown-mode-hook #'dd/docs-enable-rainbow-backgrounds-h)
+
+(defun dd/mdx-preview--restore-indent-bars ()
+  (when dd/mdx-preview--restore-indent-bars
+    (indent-bars-mode 1)
+    (setq dd/mdx-preview--restore-indent-bars nil)))
+
+(defun dd/mdx-preview--flush-line (position)
+  "Refontify the line at POSITION, if accessible."
+  (when (<= (point-min) position (point-max))
+    (save-excursion
+      (goto-char position)
+      (font-lock-flush (line-beginning-position) (line-beginning-position 2)))))
+
+(defun dd/mdx-preview--reveal ()
+  "Reveal source markup on the current line and render it on the old line."
+  (let ((line (line-beginning-position))
+        (old (marker-position dd/mdx-preview--line)))
+    (unless (= line old)
+      (set-marker dd/mdx-preview--line line)
+      (dd/mdx-preview--flush-line old)
+      (dd/mdx-preview--flush-line line))))
+
+(define-minor-mode dd/mdx-preview-mode
+  "Preview MDX headings in place and shade frontmatter and component source."
+  :lighter " MDX-P"
+  (when (and dd/mdx-preview-mode (not (derived-mode-p 'dd/mdx-mode)))
+    (setq dd/mdx-preview-mode nil)
+    (user-error "MDX preview is only available in MDX buffers"))
+  (if dd/mdx-preview-mode
+      (progn
+        (when (bound-and-true-p indent-bars-mode)
+          (setq dd/mdx-preview--restore-indent-bars t)
+          (indent-bars-mode -1))
+        (setq dd/mdx-preview--line (copy-marker (line-beginning-position)))
+        (font-lock-add-keywords nil dd/mdx-preview--keywords 'append)
+        (add-hook 'post-command-hook #'dd/mdx-preview--reveal nil t)
+        (add-hook 'change-major-mode-hook #'dd/mdx-preview--restore-indent-bars nil t))
+    (remove-hook 'post-command-hook #'dd/mdx-preview--reveal t)
+    (remove-hook 'change-major-mode-hook #'dd/mdx-preview--restore-indent-bars t)
+    (dd/mdx-preview--restore-indent-bars)
+    (font-lock-remove-keywords nil dd/mdx-preview--keywords)
+    (when dd/mdx-preview--line
+      (set-marker dd/mdx-preview--line nil))
+    (setq dd/mdx-preview--line nil))
+  (font-lock-flush))
+
+(map! :map dd/mdx-mode-map
+      :localleader
+      :desc "Toggle in-place preview" "V" #'dd/mdx-preview-mode)
 
 ;;; Site links
 

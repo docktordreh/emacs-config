@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoice-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: invoice-worker
+  template:
+    metadata:
+      labels:
+        app: invoice-worker
+    spec:
+      containers:
+        - name: worker
+          image: registry.example.com/invoice-worker:1.4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
